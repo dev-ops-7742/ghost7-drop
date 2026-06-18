@@ -1,7 +1,7 @@
     <script>
         // --- CONFIGURATION ---
         const LOCKOUT_KEY = 'aethelgard_lockout_v3';
-        const LOCKOUT_DURATION = 24 * 60 * 60 * 1000; // 24 HOURS
+        const LOCKOUT_DURATION = 0; // DISABLED FOR TESTING
         
         // STEGANOGRAPHIC KEY EXTRACTION
         function extractKey() {
@@ -36,43 +36,10 @@
         const archiveIndex = document.getElementById('archive-index');
         const fileList = document.getElementById('file-list');
 
-        // --- LOCKOUT LOGIC ---
-        function checkLockout() {
-            const lockedUntil = localStorage.getItem(LOCKOUT_KEY);
-            if (lockedUntil && Date.now() < parseInt(lockedUntil)) {
-                showLockout(parseInt(lockedUntil));
-                return true;
-            }
-            if (lockedUntil && Date.now() >= parseInt(lockedUntil)) {
-                localStorage.removeItem(LOCKOUT_KEY);
-            }
-            return false;
-        }
-
-        function setLockout() {
-            localStorage.setItem(LOCKOUT_KEY, Date.now() + LOCKOUT_DURATION);
-        }
-
-        function showLockout(until) {
-            dataStream.style.display = 'none';
-            lockoutOverlay.style.display = 'flex';
-            
-            const updateTimer = () => {
-                const remaining = until - Date.now();
-                if (remaining <= 0) {
-                    localStorage.removeItem(LOCKOUT_KEY);
-                    location.reload();
-                    return;
-                }
-                const h = Math.floor(remaining / 3600000).toString().padStart(2, '0');
-                const m = Math.floor((remaining % 3600000) / 60000).toString().padStart(2, '0');
-                const s = Math.floor((remaining % 60000) / 1000).toString().padStart(2, '0');
-                countdownEl.innerText = `${h}:${m}:${s}`;
-            };
-            
-            updateTimer();
-            setInterval(updateTimer, 1000);
-        }
+        // --- LOCKOUT LOGIC (DISABLED) ---
+        function checkLockout() { return false; }
+        function setLockout() {}
+        function showLockout(until) {}
 
         // --- TYPEWRITER EFFECT ---
         const decodedPayload = atob(base64Payload);
@@ -88,8 +55,12 @@
                 setTimeout(typeWriter, speed);
             } else {
                 setTimeout(() => {
-                    setLockout();
-                    showLockout(Date.now() + LOCKOUT_DURATION);
+                    // No lockout anymore
+                    dataStream.style.display = 'none';
+                    archiveIndex.style.display = 'block';
+                    renderFileList();
+                    _t_chk = Date.now();
+                    console.log("> TEMPORAL LOCK DISENGAGED. AWAITING CONNECTOR SIGNAL...");
                 }, 2000);
             }
         }
