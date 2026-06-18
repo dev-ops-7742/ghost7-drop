@@ -138,4 +138,342 @@
     <div id="data-stream"><span class="cursor"></span></div>
 
     <!-- Lockout Screen -->
+    <div id="lockout-overlay">
+        <h1>⚠ TEMPORAL LOCKOUT ACTIVE </h1>
+        <p>UNAUTHORIZED OBSERVATION DETECTED. DATA STREAM TERMINATED.</p>
+        <p>TO PROCEED, YOU MUST AUTHENTICATE WITH THE 11-DIGIT GEOSPATIAL KEY.</p>
+        <div id="countdown">--:--:--</div>
+        <p style="font-size: 12px; opacity: 0.7;">// PROTOCOL THELGARD // DO NOT REFRESH // TIME IS NON-LINEAR //</p>
+        
+        <!-- 11 Digit Input Boxes -->
+        <p style="margin-top: 20px; color: #888;">ENTER COORDINATE SEQUENCE:</p>
+        <div id="code-grid">
+            <input type="text" maxlength="1" class="digit-box" data-index="0">
+            <input type="text" maxlength="1" class="digit-box" data-index="1">
+            <input type="text" maxlength="1" class="digit-box" data-index="2">
+            <input type="text" maxlength="1" class="digit-box" data-index="3">
+            <input type="text" maxlength="1" class="digit-box" data-index="4">
+            <input type="text" maxlength="1" class="digit-box" data-index="5">
+            <input type="text" maxlength="1" class="digit-box" data-index="6">
+            <input type="text" maxlength="1" class="digit-box" data-index="7">
+            <input type="text" maxlength="1" class="digit-box" data-index="8">
+            <input type="text" maxlength="1" class="digit-box" data-index="9">
+            <input type="text" maxlength="1" class="digit-box" data-index="10">
+        </div>
+        
+        <p class="hint-text">// REFERENCE: EUROPEAN NUCLEAR RESEARCH FACILITY //</p>
+        
+        <button id="submit-btn">AUTHENTICATE</button>
+        <p id="error-msg">SEQUENCE INVALID. TEMPORAL FRACTURE DETECTED.</p>
+    </div>
+
+    <!-- Archive Index (Revealed After Unlock) -->
+    <div id="archive-index">
+        <div class="index-header">
+            > AUTHENTICATION ACCEPTED. CONNECTOR VERIFIED.<br>
+            > LOADING ARCHIVE INDEX...<br>
+            > INDEX OF /SECURE_DROP/GHOST7/
+        </div>
+        <div id="file-list">
+            <!-- Files injected via JS after unlock -->
+        </div>
+    </div>
+
+    <!-- 
+        // Legacy render fix - do not modify 
+        // Buffer overflow protection
+        // System integrity check v2.1
+    -->
+    <div class="container-fluid" style="position: absolute; left: -9999px; width: 0; height: 0; overflow: hidden;">
+        <div class="sys-render-layer" id="_r_buf">
+            <!-- Dynamic content injected here -->
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const LOCKOUT_KEY = 'aethelgard_lockout_v3';
+        const LOCKOUT_DURATION = 24 * 60 * 60 * 1000; // 24 HOURS
+        
+        // STEGANOGRAPHIC KEY EXTRACTION
+        // Key is reconstructed from CSS properties at runtime
+        function extractKey() {
+            try {
+                const s1 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-1')).opacity).toFixed(2).replace('.','');
+                const s2 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-2')).opacity).toFixed(2).replace('.','');
+                const s3 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-3')).opacity).toFixed(2).replace('.','');
+                const s4 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-4')).opacity).toFixed(2).replace('.','');
+                const s5 = parseInt(getComputedStyle(document.querySelector('.steg-layer-5')).letterSpacing);
+                const s6 = parseInt(getComputedStyle(document.querySelector('.steg-layer-6')).letterSpacing);
+                
+                // For zero-width chars, we use a fallback since getAttribute('content') doesn't work on pseudo-elements
+                // The real key is assembled from the visible CSS values + known CERN suffix
+                const suffix = "578"; 
+                
+                // Reassemble: 46 + 23 + 19 + 60 + 5 + 7 + 8 = 46231960578
+                return s1 + s2 + s3 + s4 + s5 + s6 + suffix;
+            } catch(e) {
+                console.warn("Steg extraction failed, using fallback");
+                return "46231960578"; // Fallback if CSS not ready
+            }
+        }
+        
+        const CORRECT_CODE = extractKey(); // Runtime extraction, never stored as string
+        
+        // --- BASE64 DATA PAYLOAD ---
+        const base64Payload = "QVJDSElWRSBTVEFUVVM6IFBBUlRJQUwKClJFQ09WRVJZIFNUQVRVUzogMTclCgpJZiB5b3UgYXJlIHJlYWRpbmcgdGhpcywgdGhlbiB0aGUgYXJjaGl2ZSBpcyBzdGlsbCBmdW5jdGlvbmluZy4KClRoYXQgc2hvdWxkIG5vdCBiZSBwb3NzaWJsZS4KClRoZSByZWNvcmRzIHlvdSBhcmUgYWJvdXQgdG8gYWNjZXNzIHdlcmUgbm90IHJlY292ZXJlZCBmcm9tIGEgc2VydmVyLCBhIGRhdGFiYXNlLCBvciBhIGdvdmVybm1lbnQgc3lzdGVtLiBUaGV5IHdlcmUgcmVjb3ZlcmVkIGZyb20gYSB0cmFuc21pc3Npb24gY2hhaW4gd2hvc2Ugb3JpZ2luIHBvaW50IGhhcyBub3QgeWV0IG9jY3VycmVkLgoKVGhlIG9sZGVzdCBmaWxlcyBpbiB0aGlzIGFyY2hpdmUgYXBwZWFyIHRvIG9yaWdpbmF0ZSBmcm9tIHRoZSB5ZWFyIDMwMzYuCgpUaGUgbmV3ZXN0IGZpbGVzIGFwcGVhciB0byBvcmlnaW5hdGUgZnJvbSB0b21vcnJvdy4KClRoaXMgY29udHJhZGljdGlvbiByZW1haW5zIHVucmVzb2x2ZWQuCgpGb3IgdGhlIGxhc3QgZWxldmVuIHllYXJzIGZyYWdtZW50cyBoYXZlIGFwcGVhcmVkIGFjcm9zcyB1bnJlbGF0ZWQgc3lzdGVtcy4gU29tZSBhcnJpdmVkIHRocm91Z2ggY29ycnVwdGVkIGJhY2t1cHMuIFNvbWUgYXBwZWFyZWQgaW5zaWRlIGRlbGV0ZWQgc3RvcmFnZSB2b2x1bWVzLiBTb21lIHdlcmUgZGlzY292ZXJlZCBlbWJlZGRlZCB3aXRoaW4gZmlsZXMgdGhhdCBwcmVkYXRlIHRoZWlyIG93biBjcmVhdGlvbiBkYXRlcy4KCkV2ZXJ5IGF0dGVtcHQgdG8gZXhwbGFpbiB0aGVzZSBldmVudHMgaGFzIGZhaWxlZC4KClRoZSBhcmNoaXZlIGNvbnRhaW5zIHJlZmVyZW5jZXMgdG8gUHJvamVjdCBOVUxMLCB0aGUgVGhpcnRlZW50aCBBcmNoaXZlLCB0aGUgUmVnaXN0cnksIE5FUk8gTElOSywgdGhlIElyb24gRG9vciwgYW5kIGFuIGluZGl2aWR1YWwgaWRlbnRpZnlpbmcgdGhlbXNlbHZlcyBhcyBFbGlhcyBWb3NzLgoKTm8gdmVyaWZpZWQgcmVjb3JkIG9mIEVsaWFzIFZvc3MgZXhpc3RzLgoKRGVzcGl0ZSB0aGlzLCBWb3NzIGFwcGVhcnMgcmVwZWF0ZWRseSB0aHJvdWdob3V0IHRoZSByZWNvdmVyZWQgbWF0ZXJpYWwuCgpUaGUgdHJhbnNtaXNzaW9ucyBkZXNjcmliZSBhIGZ1dHVyZSB0aW1lbGluZSBleHBlcmllbmNpbmcgcHJvZ3Jlc3NpdmUgaW5zdGFiaWxpdHksIHdpZGVzcHJlYWQgZGF0YSBsb3NzLCBhbmQgd2hhdCB0aGUgcmVjb3JkcyByZWZlciB0byBhcyBUZW1wb3JhbCBGcmFjdHVyZSBFdmVudHMuCgpUaGUgdmFsaWRpdHkgb2YgdGhlc2UgY2xhaW1zIHJlbWFpbnMgdW5rbm93bi4KClNldmVyYWwgaW5kaXZpZHVhbHMgbWVudGlvbmVkIHdpdGhpbiB0aGUgYXJjaGl2ZSBoYXZlIHNpbmNlIGJlZW4gaWRlbnRpZmllZC4KClNldmVyYWwgb3RoZXJzIHNob3VsZCBub3QgZXhpc3QuCgpBIHNtYWxsIG51bWJlciBhcHBlYXIgdG8gcG9zc2VzcyBpbmZvcm1hdGlvbiB0aGV5IGNvdWxkIG5vdCByZWFzb25hYmx5IGhhdmUgb2J0YWluZWQuCgpGb3IgdGhpcyByZWFzb24gdGhlIGFyY2hpdmUgcmVtYWlucyB1bmRlciBvYnNlcnZhdGlvbi4KCklmIHlvdSBjb250aW51ZSBiZXlvbmQgdGhpcyBwb2ludCwgeW91IHdpbGwgZW5jb3VudGVyIGVuY29kZWQgbWF0ZXJpYWwgcmVxdWlyaW5nIGluZGVwZW5kZW50IGFuYWx5c2lzLiBTb21lIGZpbGVzIG1heSBiZSBpbmNvbXBsZXRlLiBTb21lIG1heSBiZSBjb3JydXB0ZWQuIFNvbWUgbWF5IGhhdmUgYmVlbiBhbHRlcmVkIGludGVudGlvbmFsbHkuCgpBc3N1bWUgbm90aGluZy4KClRydXN0IG5vdGhpbmcuCgpWZXJpZnkgZXZlcnl0aGluZy4KCk9uZSBmaW5hbCB3YXJuaW5nLgoKVGhlIGFyY2hpdmUgcmVwZWF0ZWRseSByZWZlcnMgdG8gaW5kaXZpZHVhbHMga25vd24gYXMgQ29ubmVjdG9ycy4KClRoZXNlIGluZGl2aWR1YWxzIHNoYXJlIG9uZSBjb21tb24gY2hhcmFjdGVyaXN0aWMuCgpUaGV5IGNvbnRpbnVlLgoKV2hlbiBvdGhlcnMgbGVhdmUsIHRoZXkgY29udGludWUuCgpXaGVuIG90aGVycyBkaXNtaXNzIHRoZSBldmlkZW5jZSwgdGhleSBjb250aW51ZS4KCldoZW4gb3RoZXJzIHN0b3AgYXNraW5nIHF1ZXN0aW9ucywgdGhleSBjb250aW51ZS4KCklmIHRoZSByZWNvdmVyZWQgZmlsZXMgYXJlIGFjY3VyYXRlLCB0aGUgYXJjaGl2ZSBkb2VzIG5vdCBzZWFyY2ggZm9yIGV2ZXJ5b25lLgoKVGhlIGFyY2hpdmUgc2VhcmNoZXMgZm9yIHRoZW0uCgpBUkNISVZFIEFDQ0VTUyBHUkFOVEVELAoKVFJBTlNNSVNTSU9OXzAwMSBBVkFJTEFCTEUuCgpQcm9jZWVkIGF0IHlvdXIgb3duIHJpc2su";
+
+        // --- DOM ELEMENTS ---
+        const dataStream = document.getElementById('data-stream');
+        const lockoutOverlay = document.getElementById('lockout-overlay');
+        const countdownEl = document.getElementById('countdown');
+        const submitBtn = document.getElementById('submit-btn');
+        const errorMsg = document.getElementById('error-msg');
+        const digitBoxes = document.querySelectorAll('.digit-box');
+        const cursor = document.querySelector('.cursor');
+        const archiveIndex = document.getElementById('archive-index');
+        const fileList = document.getElementById('file-list');
+
+        // --- LOCKOUT LOGIC ---
+        function checkLockout() {
+            const lockedUntil = localStorage.getItem(LOCKOUT_KEY);
+            if (lockedUntil && Date.now() < parseInt(lockedUntil)) {
+                showLockout(parseInt(lockedUntil));
+                return true;
+            }
+            if (lockedUntil && Date.now() >= parseInt(lockedUntil)) {
+                localStorage.removeItem(LOCKOUT_KEY);
+            }
+            return false;
+        }
+
+        function setLockout() {
+            localStorage.setItem(LOCKOUT_KEY, Date.now() + LOCKOUT_DURATION);
+        }
+
+        function showLockout(until) {
+            dataStream.style.display = 'none';
+            lockoutOverlay.style.display = 'flex';
+            
+            const updateTimer = () => {
+                const remaining = until - Date.now();
+                if (remaining <= 0) {
+                    localStorage.removeItem(LOCKOUT_KEY);
+                    location.reload();
+                    return;
+                }
+                const h = Math.floor(remaining / 3600000).toString().padStart(2, '0');
+                const m = Math.floor((remaining % 3600000) / 60000).toString().padStart(2, '0');
+                const s = Math.floor((remaining % 60000) / 1000).toString().padStart(2, '0');
+                countdownEl.innerText = `${h}:${m}:${s}`;
+            };
+            
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        }
+
+        // --- TYPEWRITER EFFECT (FIXED: DECODES BASE64 FIRST) ---
+        const decodedPayload = atob(base64Payload); // Decode once at startup
+        let index = 0;
+        function typeWriter() {
+            if (index < decodedPayload.length) {
+                const speed = Math.random() * 8 + 2;
+                const char = decodedPayload.charAt(index); // Use decoded text
+                const textNode = document.createTextNode(char);
+                dataStream.insertBefore(textNode, cursor);
+                index++;
+                dataStream.scrollTop = dataStream.scrollHeight;
+                setTimeout(typeWriter, speed);
+            } else {
+                setTimeout(() => {
+                    setLockout();
+                    showLockout(Date.now() + LOCKOUT_DURATION);
+                }, 2000);
+            }
+        }
+
+        // --- DIGIT BOX AUTO-FOCUS LOGIC ---
+        digitBoxes.forEach((box, i) => {
+            box.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                if (e.target.value) {
+                    e.target.classList.add('valid');
+                } else {
+                    e.target.classList.remove('valid');
+                }
+                if (e.target.value && i < digitBoxes.length - 1) {
+                    digitBoxes[i + 1].focus();
+                }
+            });
+            
+            box.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && i > 0) {
+                    digitBoxes[i - 1].classList.remove('valid');
+                    digitBoxes[i - 1].focus();
+                }
+            });
+        });
+
+        // --- CODE VALIDATION & UNLOCK ---
+        submitBtn.addEventListener('click', () => {
+            let enteredCode = '';
+            digitBoxes.forEach(box => enteredCode += box.value);
+            
+            if (enteredCode === CORRECT_CODE) {
+                // SEAMLESS UNLOCK SEQUENCE
+                lockoutOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    lockoutOverlay.style.display = 'none';
+                    dataStream.innerHTML = ''; // Clear old stream
+                    dataStream.style.display = 'block';
+                    
+                    // Type unlock message
+                    const unlockMsg = "> AUTHENTICATION ACCEPTED.\n> CONNECTOR VERIFIED.\n> LOADING ARCHIVE INDEX...\n\n";
+                    let msgIndex = 0;
+                    function typeUnlock() {
+                        if (msgIndex < unlockMsg.length) {
+                            const char = unlockMsg.charAt(msgIndex);
+                            const textNode = document.createTextNode(char);
+                            dataStream.insertBefore(textNode, cursor);
+                            msgIndex++;
+                            dataStream.scrollTop = dataStream.scrollHeight;
+                            setTimeout(typeUnlock, 30);
+                        } else {
+                            // Reveal archive index after typing
+                            setTimeout(() => {
+                                dataStream.style.display = 'none';
+                                archiveIndex.style.display = 'block';
+                                renderFileList();
+                                
+                                // Start Floor 2 timer
+                                _t_chk = Date.now();
+                                console.log("> TEMPORAL LOCK DISENGAGED. AWAITING CONNECTOR SIGNAL...");
+                            }, 1000);
+                        }
+                    }
+                    typeUnlock();
+                }, 1000);
+            } else {
+                errorMsg.style.display = 'block';
+                digitBoxes.forEach(box => {
+                    box.value = '';
+                    box.classList.remove('valid');
+                });
+                digitBoxes[0].focus();
+                setTimeout(() => { errorMsg.style.display = 'none'; }, 2000);
+            }
+        });
+
+        // --- ARCHIVE INDEX RENDERER ---
+        function renderFileList() {
+            const files = [
+                { name: "transmission_002.html", size: "4.2 KB", status: "[LOCKED]", unlocked: false },
+                { name: "surveillance_log_shanghai.dat", size: "842 KB", status: "[ENCRYPTED]", unlocked: false },
+                { name: "ghost7_manifest.json", size: "0 KB", status: "[PURGED]", unlocked: false },
+                { name: "cern_coordinates.ref", size: "12 B", status: "[REFERENCE]", unlocked: true },
+                { name: "temporal_fracture_report.pdf", size: "2.1 MB", status: "[CORRUPTED]", unlocked: false }
+            ];
+            
+            fileList.innerHTML = '';
+            files.forEach(file => {
+                const row = document.createElement('div');
+                row.className = 'file-row';
+                row.innerHTML = `
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-status ${file.unlocked ? 'unlocked' : ''}">${file.status} | ${file.size}</span>
+                `;
+                row.addEventListener('click', () => handleFileClick(file));
+                fileList.appendChild(row);
+            });
+        }
+
+        function handleFileClick(file) {
+            if (!file.unlocked) {
+                alert(`ACCESS DENIED: ${file.name} requires additional authentication.`);
+            } else {
+                alert(`OPENING: ${file.name}...`);
+                // TODO: Implement actual file opening logic here
+            }
+        }
+
+        // --- FLOOR 2 TRIGGER MECHANISM (OBFUSCATED) ---
+        // Legacy debug utility - do not modify
+        let _t_chk = null;
+        let _v_sig = false;
+        
+        // Listen for secret key combo: Ctrl + Shift + V
+        document.addEventListener('keydown', (e) => {
+            if (!_t_chk || _v_sig) return;
+            
+            const timeSinceUnlock = Date.now() - _t_chk;
+            
+            // Must wait 7 seconds after unlock
+            if (timeSinceUnlock < 7000) {
+                // Tiny hint flash if they try too early
+                if (e.ctrlKey && e.shiftKey && e.key === 'V') {
+                    document.body.style.backgroundColor = '#0a0000';
+                    setTimeout(() => { document.body.style.backgroundColor = '#000'; }, 50);
+                }
+                return;
+            }
+            
+            // Correct combo after 7s wait
+            if (e.ctrlKey && e.shiftKey && e.key === 'V') {
+                e.preventDefault();
+                _revealShadow();
+            }
+        });
+
+        function _revealShadow() {
+            _v_sig = true;
+            const _r_buf = document.getElementById('_r_buf');
+            const archiveIndex = document.getElementById('archive-index');
+            
+            // Generate Floor 2 HTML dynamically (not in source)
+            _r_buf.innerHTML = `
+                <div class="index-header" style="color: #ff3333; border-color: #ff3333;">
+                    > SHADOW INDEX DECRYPTED.<br>
+                    > CONNECTOR STATUS: VERIFIED.<br>
+                    > REAL TRANSMISSIONS BELOW.
+                </div>
+                <div id="real-file-list">
+                    <div class="file-row">
+                        <span class="file-name" style="color: #ff3333;">[AWAITING TRANSMISSION_002]</span>
+                        <span class="file-status">[ENCRYPTED]</span>
+                    </div>
+                    <div class="file-row">
+                        <span class="file-name" style="color: #ff3333;">[AWAITING CERN_SURVEILLANCE_LOG]</span>
+                        <span class="file-status">[LOCKED]</span>
+                    </div>
+                    <div class="file-row">
+                        <span class="file-name" style="color: #ff3333;">[AWAITING VOSS_MANIFEST]</span>
+                        <span class="file-status">[PURGED]</span>
+                    </div>
+                </div>
+            `;
+            
+            // Fade out decoys
+            archiveIndex.style.opacity = '0';
+            archiveIndex.style.transition = 'opacity 1s ease-out';
+            
+            setTimeout(() => {
+                archiveIndex.style.display = 'none';
+                
+                // Move shadow content into visible area
+                const shadowContent = _r_buf.innerHTML;
+                archiveIndex.innerHTML = shadowContent;
+                archiveIndex.style.display = 'block';
+                archiveIndex.style.opacity = '1';
+                
+                console.log("> SHADOW INDEX DECRYPTED. WELCOME, CONNECTOR.");
+            }, 1000);
+        }
+
+        // --- INITIALIZE ---
+        if (!checkLockout()) {
+            setTimeout(typeWriter, 500);
+        }
+    </script>
+</body>
+</html>
     
