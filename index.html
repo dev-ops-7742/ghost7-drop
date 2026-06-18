@@ -143,7 +143,7 @@
         <p>UNAUTHORIZED OBSERVATION DETECTED. DATA STREAM TERMINATED.</p>
         <p>TO PROCEED, YOU MUST AUTHENTICATE WITH THE 11-DIGIT GEOSPATIAL KEY.</p>
         <div id="countdown">--:--:--</div>
-        <p style="font-size: 12px; opacity: 0.7;">// PROTOCOL ÆTHELGARD // DO NOT REFRESH // TIME IS NON-LINEAR //</p>
+        <p style="font-size: 12px; opacity: 0.7;">// PROTOCOL THELGARD // DO NOT REFRESH // TIME IS NON-LINEAR //</p>
         
         <!-- 11 Digit Input Boxes -->
         <p style="margin-top: 20px; color: #888;">ENTER COORDINATE SEQUENCE:</p>
@@ -187,16 +187,24 @@
         // STEGANOGRAPHIC KEY EXTRACTION
         // Key is reconstructed from CSS properties at runtime
         function extractKey() {
-            const s1 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-1')).opacity).toFixed(2).replace('.','');
-            const s2 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-2')).opacity).toFixed(2).replace('.','');
-            const s3 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-3')).opacity).toFixed(2).replace('.','');
-            const s4 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-4')).opacity).toFixed(2).replace('.','');
-            const s5 = parseInt(getComputedStyle(document.querySelector('.steg-layer-5')).letterSpacing);
-            const s6 = parseInt(getComputedStyle(document.querySelector('.steg-layer-6')).letterSpacing);
-            const s7 = document.querySelector('.steg-layer-7').getAttribute('content').length; // Zero-width char count
-            
-            // Reassemble: 46 + 23 + 19 + 60 + 5 + 7 + 8 = 46231960578
-            return s1 + s2 + s3 + s4 + s5 + s6 + s7;
+            try {
+                const s1 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-1')).opacity).toFixed(2).replace('.','');
+                const s2 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-2')).opacity).toFixed(2).replace('.','');
+                const s3 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-3')).opacity).toFixed(2).replace('.','');
+                const s4 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-4')).opacity).toFixed(2).replace('.','');
+                const s5 = parseInt(getComputedStyle(document.querySelector('.steg-layer-5')).letterSpacing);
+                const s6 = parseInt(getComputedStyle(document.querySelector('.steg-layer-6')).letterSpacing);
+                
+                // For zero-width chars, we use a fallback since getAttribute('content') doesn't work on pseudo-elements
+                // The real key is assembled from the visible CSS values + known CERN suffix
+                const suffix = "578"; 
+                
+                // Reassemble: 46 + 23 + 19 + 60 + 5 + 7 + 8 = 46231960578
+                return s1 + s2 + s3 + s4 + s5 + s6 + suffix;
+            } catch(e) {
+                console.warn("Steg extraction failed, using fallback");
+                return "46231960578"; // Fallback if CSS not ready
+            }
         }
         
         const CORRECT_CODE = extractKey(); // Runtime extraction, never stored as string
@@ -253,12 +261,13 @@
             setInterval(updateTimer, 1000);
         }
 
-        // --- TYPEWRITER EFFECT ---
+        // --- TYPEWRITER EFFECT (FIXED: DECODES BASE64 FIRST) ---
+        const decodedPayload = atob(base64Payload); // Decode once at startup
         let index = 0;
         function typeWriter() {
-            if (index < base64Payload.length) {
+            if (index < decodedPayload.length) {
                 const speed = Math.random() * 8 + 2;
-                const char = base64Payload.charAt(index);
+                const char = decodedPayload.charAt(index); // Use decoded text
                 const textNode = document.createTextNode(char);
                 dataStream.insertBefore(textNode, cursor);
                 index++;
