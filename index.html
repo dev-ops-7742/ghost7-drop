@@ -1,202 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE ÆTHELGARD ARCHIVE // SECURE DROP</title>
-    <!-- 
-        DECOY: KEY = 00000000000 (FAKE - IGNORE)
-        REAL KEY IS HIDDEN IN BEHAVIOR & STRUCTURE
-    -->
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: #000; color: #0f0; font-family: 'Courier New', monospace; 
-            font-size: 14px; overflow: hidden; height: 100vh; display: flex; 
-            justify-content: center; align-items: center; user-select: none;
-        }
-        
-        /* CRT Scanlines */
-        .scanlines {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3));
-            background-size: 100% 4px; pointer-events: none; z-index: 10;
-        }
-        
-        /* Screen Flicker */
-        @keyframes flicker {
-            0% { opacity: 0.97; } 5% { opacity: 0.95; } 10% { opacity: 0.9; }
-            15% { opacity: 0.95; } 20% { opacity: 0.99; } 50% { opacity: 0.95; }
-            80% { opacity: 0.9; } 100% { opacity: 0.97; }
-        }
-        body { animation: flicker 0.15s infinite; }
-
-        /* Main Data Stream Container */
-        #data-stream {
-            width: 90%; max-width: 800px; height: 80vh;
-            overflow-y: auto; white-space: pre-wrap; word-break: break-all;
-            text-shadow: 0 0 5px #0f0; opacity: 0.9;
-            scrollbar-width: none;
-        }
-        #data-stream::-webkit-scrollbar { display: none; }
-
-        /* Lockout Overlay */
-        #lockout-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 20; flex-direction: column;
-            justify-content: center; align-items: center; text-align: center;
-            transition: opacity 1s ease-out;
-        }
-        
-        #lockout-overlay h1 { 
-            color: #ff3333; font-size: 28px; text-transform: uppercase; 
-            text-shadow: 0 0 10px #ff0000; margin-bottom: 20px; 
-        }
-        
-        #lockout-overlay p { color: #c0c0c0; font-size: 16px; margin: 10px 0; }
-        
-        #countdown { 
-            font-size: 48px; color: #ff3333; font-weight: bold; 
-            letter-spacing: 5px; margin: 30px 0; text-shadow: 0 0 15px #ff0000;
-        }
-
-        /* 11-Digit Input Grid */
-        #code-grid {
-            display: flex; gap: 8px; margin-top: 30px; flex-wrap: wrap; justify-content: center;
-        }
-        
-        .digit-box {
-            width: 35px; height: 45px; background: #111; border: 1px solid #ff3333;
-            color: #ff3333; font-family: 'Courier New', monospace; font-size: 20px;
-            text-align: center; outline: none; text-shadow: 0 0 5px #ff3333;
-            transition: all 0.2s ease;
-        }
-        
-        .digit-box:focus { border-color: #fff; background: #1a0000; color: #fff; }
-        .digit-box.valid { border-color: #0f0; color: #0f0; text-shadow: 0 0 5px #0f0; }
-        
-        #submit-btn {
-            margin-top: 30px; background: #ff3333; color: #000; border: none;
-            font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold;
-            padding: 10px 40px; cursor: pointer; text-transform: uppercase;
-            text-shadow: 0 0 5px #ff3333;
-        }
-        
-        #submit-btn:hover { background: #fff; }
-        
-        #error-msg { color: #ff3333; margin-top: 20px; display: none; font-size: 18px; text-shadow: 0 0 5px #ff0000; }
-        
-        .hint-text { 
-            color: #555; font-size: 12px; margin-top: 15px; font-style: italic; 
-        }
-
-        /* Archive Index Styles (Hidden Initially) */
-        #archive-index {
-            display: none; width: 90%; max-width: 800px; height: 80vh;
-            overflow-y: auto; scrollbar-width: none;
-        }
-        #archive-index::-webkit-scrollbar { display: none; }
-        
-        .index-header { 
-            color: #0f0; font-size: 18px; margin-bottom: 20px; 
-            text-shadow: 0 0 5px #0f0; border-bottom: 1px solid #0f0; padding-bottom: 10px;
-        }
-        
-        .file-row {
-            display: flex; justify-content: space-between; padding: 8px 0;
-            border-bottom: 1px solid #1a1a1a; cursor: pointer;
-        }
-        .file-row:hover { background: #0a0a0a; }
-        .file-name { color: #4a9eff; }
-        .file-status { color: #ff3333; font-size: 12px; }
-        .file-status.unlocked { color: #0f0; }
-
-        .cursor {
-            display: inline-block; width: 10px; height: 18px;
-            background: #0f0; animation: blink 0.8s infinite;
-            vertical-align: middle; margin-left: 2px;
-        }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        
-        /* STEGANOGRAPHIC CSS ENCODING */
-        /* Opacity values encode first 4 digits: 0.46, 0.23, 0.19, 0.60 */
-        .steg-layer-1 { opacity: 0.46; }
-        .steg-layer-2 { opacity: 0.23; }
-        .steg-layer-3 { opacity: 0.19; }
-        .steg-layer-4 { opacity: 0.60; }
-        /* Letter-spacing encodes next 4 digits: 5.7px, 8px */
-        .steg-layer-5 { letter-spacing: 5.7px; }
-        .steg-layer-6 { letter-spacing: 8px; }
-        /* Zero-width chars in content encode last 3 digits: 5,7,8 */
-        .steg-layer-7::after { content: "\200B\200C\200B"; }
-    </style>
-</head>
-<body>
-    <div class="scanlines"></div>
-    
-    <!-- Base64 Data Stream -->
-    <div id="data-stream"><span class="cursor"></span></div>
-
-    <!-- Lockout Screen -->
-    <div id="lockout-overlay">
-        <h1>⚠ TEMPORAL LOCKOUT ACTIVE </h1>
-        <p>UNAUTHORIZED OBSERVATION DETECTED. DATA STREAM TERMINATED.</p>
-        <p>TO PROCEED, YOU MUST AUTHENTICATE WITH THE 11-DIGIT GEOSPATIAL KEY.</p>
-        <div id="countdown">--:--:--</div>
-        <p style="font-size: 12px; opacity: 0.7;">// PROTOCOL THELGARD // DO NOT REFRESH // TIME IS NON-LINEAR //</p>
-        
-        <!-- 11 Digit Input Boxes -->
-        <p style="margin-top: 20px; color: #888;">ENTER COORDINATE SEQUENCE:</p>
-        <div id="code-grid">
-            <input type="text" maxlength="1" class="digit-box" data-index="0">
-            <input type="text" maxlength="1" class="digit-box" data-index="1">
-            <input type="text" maxlength="1" class="digit-box" data-index="2">
-            <input type="text" maxlength="1" class="digit-box" data-index="3">
-            <input type="text" maxlength="1" class="digit-box" data-index="4">
-            <input type="text" maxlength="1" class="digit-box" data-index="5">
-            <input type="text" maxlength="1" class="digit-box" data-index="6">
-            <input type="text" maxlength="1" class="digit-box" data-index="7">
-            <input type="text" maxlength="1" class="digit-box" data-index="8">
-            <input type="text" maxlength="1" class="digit-box" data-index="9">
-            <input type="text" maxlength="1" class="digit-box" data-index="10">
-        </div>
-        
-        <p class="hint-text">// REFERENCE: EUROPEAN NUCLEAR RESEARCH FACILITY //</p>
-        
-        <button id="submit-btn">AUTHENTICATE</button>
-        <p id="error-msg">SEQUENCE INVALID. TEMPORAL FRACTURE DETECTED.</p>
-    </div>
-
-    <!-- Archive Index (Revealed After Unlock) -->
-    <div id="archive-index">
-        <div class="index-header">
-            > AUTHENTICATION ACCEPTED. CONNECTOR VERIFIED.<br>
-            > LOADING ARCHIVE INDEX...<br>
-            > INDEX OF /SECURE_DROP/GHOST7/
-        </div>
-        <div id="file-list">
-            <!-- Files injected via JS after unlock -->
-        </div>
-    </div>
-
-    <!-- 
-        // Legacy render fix - do not modify 
-        // Buffer overflow protection
-        // System integrity check v2.1
-    -->
-    <div class="container-fluid" style="position: absolute; left: -9999px; width: 0; height: 0; overflow: hidden;">
-        <div class="sys-render-layer" id="_r_buf">
-            <!-- Dynamic content injected here -->
-        </div>
-    </div>
-
     <script>
         // --- CONFIGURATION ---
         const LOCKOUT_KEY = 'aethelgard_lockout_v3';
         const LOCKOUT_DURATION = 24 * 60 * 60 * 1000; // 24 HOURS
         
         // STEGANOGRAPHIC KEY EXTRACTION
-        // Key is reconstructed from CSS properties at runtime
         function extractKey() {
             try {
                 const s1 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-1')).opacity).toFixed(2).replace('.','');
@@ -205,20 +12,15 @@
                 const s4 = parseFloat(getComputedStyle(document.querySelector('.steg-layer-4')).opacity).toFixed(2).replace('.','');
                 const s5 = parseInt(getComputedStyle(document.querySelector('.steg-layer-5')).letterSpacing);
                 const s6 = parseInt(getComputedStyle(document.querySelector('.steg-layer-6')).letterSpacing);
-                
-                // For zero-width chars, we use a fallback since getAttribute('content') doesn't work on pseudo-elements
-                // The real key is assembled from the visible CSS values + known CERN suffix
                 const suffix = "578"; 
-                
-                // Reassemble: 46 + 23 + 19 + 60 + 5 + 7 + 8 = 46231960578
                 return s1 + s2 + s3 + s4 + s5 + s6 + suffix;
             } catch(e) {
                 console.warn("Steg extraction failed, using fallback");
-                return "46231960578"; // Fallback if CSS not ready
+                return "46231960578";
             }
         }
         
-        const CORRECT_CODE = extractKey(); // Runtime extraction, never stored as string
+        const CORRECT_CODE = extractKey();
         
         // --- BASE64 DATA PAYLOAD ---
         const base64Payload = "QVJDSElWRSBTVEFUVVM6IFBBUlRJQUwKClJFQ09WRVJZIFNUQVRVUzogMTclCgpJZiB5b3UgYXJlIHJlYWRpbmcgdGhpcywgdGhlbiB0aGUgYXJjaGl2ZSBpcyBzdGlsbCBmdW5jdGlvbmluZy4KClRoYXQgc2hvdWxkIG5vdCBiZSBwb3NzaWJsZS4KClRoZSByZWNvcmRzIHlvdSBhcmUgYWJvdXQgdG8gYWNjZXNzIHdlcmUgbm90IHJlY292ZXJlZCBmcm9tIGEgc2VydmVyLCBhIGRhdGFiYXNlLCBvciBhIGdvdmVybm1lbnQgc3lzdGVtLiBUaGV5IHdlcmUgcmVjb3ZlcmVkIGZyb20gYSB0cmFuc21pc3Npb24gY2hhaW4gd2hvc2Ugb3JpZ2luIHBvaW50IGhhcyBub3QgeWV0IG9jY3VycmVkLgoKVGhlIG9sZGVzdCBmaWxlcyBpbiB0aGlzIGFyY2hpdmUgYXBwZWFyIHRvIG9yaWdpbmF0ZSBmcm9tIHRoZSB5ZWFyIDMwMzYuCgpUaGUgbmV3ZXN0IGZpbGVzIGFwcGVhciB0byBvcmlnaW5hdGUgZnJvbSB0b21vcnJvdy4KClRoaXMgY29udHJhZGljdGlvbiByZW1haW5zIHVucmVzb2x2ZWQuCgpGb3IgdGhlIGxhc3QgZWxldmVuIHllYXJzIGZyYWdtZW50cyBoYXZlIGFwcGVhcmVkIGFjcm9zcyB1bnJlbGF0ZWQgc3lzdGVtcy4gU29tZSBhcnJpdmVkIHRocm91Z2ggY29ycnVwdGVkIGJhY2t1cHMuIFNvbWUgYXBwZWFyZWQgaW5zaWRlIGRlbGV0ZWQgc3RvcmFnZSB2b2x1bWVzLiBTb21lIHdlcmUgZGlzY292ZXJlZCBlbWJlZGRlZCB3aXRoaW4gZmlsZXMgdGhhdCBwcmVkYXRlIHRoZWlyIG93biBjcmVhdGlvbiBkYXRlcy4KCkV2ZXJ5IGF0dGVtcHQgdG8gZXhwbGFpbiB0aGVzZSBldmVudHMgaGFzIGZhaWxlZC4KClRoZSBhcmNoaXZlIGNvbnRhaW5zIHJlZmVyZW5jZXMgdG8gUHJvamVjdCBOVUxMLCB0aGUgVGhpcnRlZW50aCBBcmNoaXZlLCB0aGUgUmVnaXN0cnksIE5FUk8gTElOSywgdGhlIElyb24gRG9vciwgYW5kIGFuIGluZGl2aWR1YWwgaWRlbnRpZnlpbmcgdGhlbXNlbHZlcyBhcyBFbGlhcyBWb3NzLgoKTm8gdmVyaWZpZWQgcmVjb3JkIG9mIEVsaWFzIFZvc3MgZXhpc3RzLgoKRGVzcGl0ZSB0aGlzLCBWb3NzIGFwcGVhcnMgcmVwZWF0ZWRseSB0aHJvdWdob3V0IHRoZSByZWNvdmVyZWQgbWF0ZXJpYWwuCgpUaGUgdHJhbnNtaXNzaW9ucyBkZXNjcmliZSBhIGZ1dHVyZSB0aW1lbGluZSBleHBlcmllbmNpbmcgcHJvZ3Jlc3NpdmUgaW5zdGFiaWxpdHksIHdpZGVzcHJlYWQgZGF0YSBsb3NzLCBhbmQgd2hhdCB0aGUgcmVjb3JkcyByZWZlciB0byBhcyBUZW1wb3JhbCBGcmFjdHVyZSBFdmVudHMuCgpUaGUgdmFsaWRpdHkgb2YgdGhlc2UgY2xhaW1zIHJlbWFpbnMgdW5rbm93bi4KClNldmVyYWwgaW5kaXZpZHVhbHMgbWVudGlvbmVkIHdpdGhpbiB0aGUgYXJjaGl2ZSBoYXZlIHNpbmNlIGJlZW4gaWRlbnRpZmllZC4KClNldmVyYWwgb3RoZXJzIHNob3VsZCBub3QgZXhpc3QuCgpBIHNtYWxsIG51bWJlciBhcHBlYXIgdG8gcG9zc2VzcyBpbmZvcm1hdGlvbiB0aGV5IGNvdWxkIG5vdCByZWFzb25hYmx5IGhhdmUgb2J0YWluZWQuCgpGb3IgdGhpcyByZWFzb24gdGhlIGFyY2hpdmUgcmVtYWlucyB1bmRlciBvYnNlcnZhdGlvbi4KCklmIHlvdSBjb250aW51ZSBiZXlvbmQgdGhpcyBwb2ludCwgeW91IHdpbGwgZW5jb3VudGVyIGVuY29kZWQgbWF0ZXJpYWwgcmVxdWlyaW5nIGluZGVwZW5kZW50IGFuYWx5c2lzLiBTb21lIGZpbGVzIG1heSBiZSBpbmNvbXBsZXRlLiBTb21lIG1heSBiZSBjb3JydXB0ZWQuIFNvbWUgbWF5IGhhdmUgYmVlbiBhbHRlcmVkIGludGVudGlvbmFsbHkuCgpBc3N1bWUgbm90aGluZy4KClRydXN0IG5vdGhpbmcuCgpWZXJpZnkgZXZlcnl0aGluZy4KCk9uZSBmaW5hbCB3YXJuaW5nLgoKVGhlIGFyY2hpdmUgcmVwZWF0ZWRseSByZWZlcnMgdG8gaW5kaXZpZHVhbHMga25vd24gYXMgQ29ubmVjdG9ycy4KClRoZXNlIGluZGl2aWR1YWxzIHNoYXJlIG9uZSBjb21tb24gY2hhcmFjdGVyaXN0aWMuCgpUaGV5IGNvbnRpbnVlLgoKV2hlbiBvdGhlcnMgbGVhdmUsIHRoZXkgY29udGludWUuCgpXaGVuIG90aGVycyBkaXNtaXNzIHRoZSBldmlkZW5jZSwgdGhleSBjb250aW51ZS4KCldoZW4gb3RoZXJzIHN0b3AgYXNraW5nIHF1ZXN0aW9ucywgdGhleSBjb250aW51ZS4KCklmIHRoZSByZWNvdmVyZWQgZmlsZXMgYXJlIGFjY3VyYXRlLCB0aGUgYXJjaGl2ZSBkb2VzIG5vdCBzZWFyY2ggZm9yIGV2ZXJ5b25lLgoKVGhlIGFyY2hpdmUgc2VhcmNoZXMgZm9yIHRoZW0uCgpBUkNISVZFIEFDQ0VTUyBHUkFOVEVELAoKVFJBTlNNSVNTSU9OXzAwMSBBVkFJTEFCTEUuCgpQcm9jZWVkIGF0IHlvdXIgb3duIHJpc2su";
@@ -272,13 +74,13 @@
             setInterval(updateTimer, 1000);
         }
 
-        // --- TYPEWRITER EFFECT (FIXED: DECODES BASE64 FIRST) ---
-        const decodedPayload = atob(base64Payload); // Decode once at startup
+        // --- TYPEWRITER EFFECT ---
+        const decodedPayload = atob(base64Payload);
         let index = 0;
         function typeWriter() {
             if (index < decodedPayload.length) {
                 const speed = Math.random() * 8 + 2;
-                const char = decodedPayload.charAt(index); // Use decoded text
+                const char = decodedPayload.charAt(index);
                 const textNode = document.createTextNode(char);
                 dataStream.insertBefore(textNode, cursor);
                 index++;
@@ -320,14 +122,12 @@
             digitBoxes.forEach(box => enteredCode += box.value);
             
             if (enteredCode === CORRECT_CODE) {
-                // SEAMLESS UNLOCK SEQUENCE
                 lockoutOverlay.style.opacity = '0';
                 setTimeout(() => {
                     lockoutOverlay.style.display = 'none';
-                    dataStream.innerHTML = ''; // Clear old stream
+                    dataStream.innerHTML = '';
                     dataStream.style.display = 'block';
                     
-                    // Type unlock message
                     const unlockMsg = "> AUTHENTICATION ACCEPTED.\n> CONNECTOR VERIFIED.\n> LOADING ARCHIVE INDEX...\n\n";
                     let msgIndex = 0;
                     function typeUnlock() {
@@ -339,7 +139,6 @@
                             dataStream.scrollTop = dataStream.scrollHeight;
                             setTimeout(typeUnlock, 30);
                         } else {
-                            // Reveal archive index after typing
                             setTimeout(() => {
                                 dataStream.style.display = 'none';
                                 archiveIndex.style.display = 'block';
@@ -392,24 +191,20 @@
                 alert(`ACCESS DENIED: ${file.name} requires additional authentication.`);
             } else {
                 alert(`OPENING: ${file.name}...`);
-                // TODO: Implement actual file opening logic here
             }
         }
 
-        // --- FLOOR 2 TRIGGER MECHANISM (OBFUSCATED) ---
+        // --- FLOOR 2 TRIGGER MECHANISM (FIXED GLITCH REVEAL) ---
         // Legacy debug utility - do not modify
         let _t_chk = null;
         let _v_sig = false;
         
-        // Listen for secret key combo: Ctrl + Shift + V
         document.addEventListener('keydown', (e) => {
             if (!_t_chk || _v_sig) return;
             
             const timeSinceUnlock = Date.now() - _t_chk;
             
-            // Must wait 7 seconds after unlock
             if (timeSinceUnlock < 7000) {
-                // Tiny hint flash if they try too early
                 if (e.ctrlKey && e.shiftKey && e.key === 'V') {
                     document.body.style.backgroundColor = '#0a0000';
                     setTimeout(() => { document.body.style.backgroundColor = '#000'; }, 50);
@@ -417,7 +212,6 @@
                 return;
             }
             
-            // Correct combo after 7s wait
             if (e.ctrlKey && e.shiftKey && e.key === 'V') {
                 e.preventDefault();
                 _revealShadow();
@@ -452,21 +246,18 @@
                 </div>
             `;
             
-            // Fade out decoys
-            archiveIndex.style.opacity = '0';
-            archiveIndex.style.transition = 'opacity 1s ease-out';
+            // GLITCH REVEAL: Instant swap with red flash instead of fade-out
+            archiveIndex.style.transition = 'none';
+            archiveIndex.style.opacity = '1';
+            archiveIndex.innerHTML = _r_buf.innerHTML;
             
+            // Red flash effect
+            archiveIndex.style.textShadow = '0 0 20px #ff0000';
             setTimeout(() => {
-                archiveIndex.style.display = 'none';
-                
-                // Move shadow content into visible area
-                const shadowContent = _r_buf.innerHTML;
-                archiveIndex.innerHTML = shadowContent;
-                archiveIndex.style.display = 'block';
-                archiveIndex.style.opacity = '1';
-                
-                console.log("> SHADOW INDEX DECRYPTED. WELCOME, CONNECTOR.");
-            }, 1000);
+                archiveIndex.style.textShadow = 'none';
+            }, 300);
+            
+            console.log("> SHADOW INDEX DECRYPTED. WELCOME, CONNECTOR.");
         }
 
         // --- INITIALIZE ---
@@ -474,6 +265,4 @@
             setTimeout(typeWriter, 500);
         }
     </script>
-</body>
-</html>
     
