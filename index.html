@@ -6,7 +6,7 @@
 <style>
 body{margin:0;background:#000;color:#0f0;font-family:Courier New,monospace;font-size:15px;overflow:hidden;height:100vh;display:flex;justify-content:center;align-items:center}
 .scanlines{position:fixed;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,.35) 50%);background-size:100% 4px;pointer-events:none;z-index:10}
-#screen,#floor1{width:90%;max-width:900px;height:82vh;overflow-y:auto;white-space:pre-wrap;text-shadow:0 0 6px #0f0;scrollbar-width:none}
+#screen,#floor1{width:90%;max-width:900px;height:82vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;text-shadow:0 0 6px #0f0;scrollbar-width:none}
 #screen::-webkit-scrollbar,#floor1::-webkit-scrollbar{display:none}
 .cursor{display:inline-block;width:10px;height:18px;background:#0f0;animation:blink .8s infinite}
 @keyframes blink{50%{opacity:0}}
@@ -51,7 +51,20 @@ const CODE = "46231960578";
 const LOCK_KEY = "aethelgard_lock_v1";
 const LOCK_TIME = 24*60*60*1000;
 
-const base64Payload = `QVJDSElWRSBTVEFUVVM6IFBBUlRJQUwKClJFQ09WRVJZIFNUQVRVUzogMTclCgpJZiB5b3UgYXJlIHJlYWRpbmcgdGhpcywgdGhlbiB0aGUgYXJjaGl2ZSBpcyBzdGlsbCBmdW5jdGlvbmluZy4KClRoYXQgc2hvdWxkIG5vdCBiZSBwb3NzaWJsZS4KClRoZSBvbGRlc3QgZmlsZXMgaW4gdGhpcyBhcmNoaXZlIGFwcGVhciB0byBvcmlnaW5hdGUgZnJvbSB0aGUgeWVhciAzMDM2LgoKVGhlIG5ld2VzdCBmaWxlcyBhcHBlYXIgdG8gb3JpZ2luYXRlIGZyb20gdG9tb3Jyb3cuCgpUaGlzIGNvbnRyYWRpY3Rpb24gcmVtYWlucyB1bnJlc29sdmVkLgoKVGhlIGFyY2hpdmUgY29udGFpbnMgcmVmZXJlbmNlcyB0byBQcm9qZWN0IE5VTEwsIHRoZSBUaGlydGVlbnRoIEFyY2hpdmUsIHRoZSBSZWdpc3RyeSwgTkVSTyBMSU5LLCB0aGUgSXJvbiBEb29yLCBhbmQgRWxpYXMgVm9zcy4KCk5vIHZlcmlmaWVkIHJlY29yZCBvZiBFbGlhcyBWb3NzIGV4aXN0cy4KCkFzc3VtZSBub3RoaW5nLgoKVHJ1c3Qgbm90aGluZy4KClZlcmlmeSBldmVyeXRoaW5nLgoKQVJDSElWRSBBQ0NFU1MgR1JBTlRFRC4KClRSQU5TTUlTU0lPTl8wMDEgQVZBSUxBQkxFLgoKUHJvY2VlZCBhdCB5b3VyIG93biByaXNrLg==`;
+const plainHeader = `THE ÆTHELGARD PROTOCOL
+
+ARCHIVE STATUS: PARTIAL
+
+RECOVERY STATUS: 17%
+
+--------------------------------
+BEGIN RECOVERED TRANSMISSION
+ENCODING: BASE64
+--------------------------------
+
+`;
+
+const base64Payload = `SWYgeW91IGFyZSByZWFkaW5nIHRoaXMsIHRoZW4gdGhlIGFyY2hpdmUgaXMgc3RpbGwgZnVuY3Rpb25pbmcuCgpUaGF0IHNob3VsZCBub3QgYmUgcG9zc2libGUuCgpUaGUgcmVjb3JkcyB5b3UgYXJlIGFib3V0IHRvIGFjY2VzcyB3ZXJlIG5vdCByZWNvdmVyZWQgZnJvbSBhIHNlcnZlciwgYSBkYXRhYmFzZSwgb3IgYSBnb3Zlcm5tZW50IHN5c3RlbS4gVGhleSB3ZXJlIHJlY292ZXJlZCBmcm9tIGEgdHJhbnNtaXNzaW9uIGNoYWluIHdob3NlIG9yaWdpbiBwb2ludCBoYXMgbm90IHlldCBvY2N1cnJlZC4KClRoZSBvbGRlc3QgZmlsZXMgaW4gdGhpcyBhcmNoaXZlIGFwcGVhciB0byBvcmlnaW5hdGUgZnJvbSB0aGUgeWVhciAzMDM2LgoKVGhlIG5ld2VzdCBmaWxlcyBhcHBlYXIgdG8gb3JpZ2luYXRlIGZyb20gdG9tb3Jyb3cuCgpUaGlzIGNvbnRyYWRpY3Rpb24gcmVtYWlucyB1bnJlc29sdmVkLgoKRm9yIHRoZSBsYXN0IGVsZXZlbiB5ZWFycyBmcmFnbWVudHMgaGF2ZSBhcHBlYXJlZCBhY3Jvc3MgdW5yZWxhdGVkIHN5c3RlbXMuIFNvbWUgYXJyaXZlZCB0aHJvdWdoIGNvcnJ1cHRlZCBiYWNrdXBzLiBTb21lIGFwcGVhcmVkIGluc2lkZSBkZWxldGVkIHN0b3JhZ2Ugdm9sdW1lcy4gU29tZSB3ZXJlIGRpc2NvdmVyZWQgZW1iZWRkZWQgd2l0aGluIGZpbGVzIHRoYXQgcHJlZGF0ZSB0aGVpciBvd24gY3JlYXRpb24gZGF0ZXMuCgpFdmVyeSBhdHRlbXB0IHRvIGV4cGxhaW4gdGhlc2UgZXZlbnRzIGhhcyBmYWlsZWQuCgpUaGUgYXJjaGl2ZSBjb250YWlucyByZWZlcmVuY2VzIHRvIFByb2plY3QgTlVMTCwgdGhlIFRoaXJ0ZWVudGggQXJjaGl2ZSwgdGhlIFJlZ2lzdHJ5LCBORVJPIExJTkssIHRoZSBJcm9uIERvb3IsIGFuZCBhbiBpbmRpdmlkdWFsIGlkZW50aWZ5aW5nIHRoZW1zZWx2ZXMgYXMgRWxpYXMgVm9zcy4KCk5vIHZlcmlmaWVkIHJlY29yZCBvZiBFbGlhcyBWb3NzIGV4aXN0cy4KCkRlc3BpdGUgdGhpcywgVm9zcyBhcHBlYXJzIHJlcGVhdGVkbHkgdGhyb3VnaG91dCB0aGUgcmVjb3ZlcmVkIG1hdGVyaWFsLgoKVGhlIHRyYW5zbWlzc2lvbnMgZGVzY3JpYmUgYSBmdXR1cmUgdGltZWxpbmUgZXhwZXJpZW5jaW5nIHByb2dyZXNzaXZlIGluc3RhYmlsaXR5LCB3aWRlc3ByZWFkIGRhdGEgbG9zcywgYW5kIHdoYXQgdGhlIHJlY29yZHMgcmVmZXIgdG8gYXMgVGVtcG9yYWwgRnJhY3R1cmUgRXZlbnRzLgoKVGhlIHZhbGlkaXR5IG9mIHRoZXNlIGNsYWltcyByZW1haW5zIHVua25vd24uCgpTZXZlcmFsIGluZGl2aWR1YWxzIG1lbnRpb25lZCB3aXRoaW4gdGhlIGFyY2hpdmUgaGF2ZSBzaW5jZSBiZWVuIGlkZW50aWZpZWQuCgpTZXZlcmFsIG90aGVycyBzaG91bGQgbm90IGV4aXN0LgoKQSBzbWFsbCBudW1iZXIgYXBwZWFyIHRvIHBvc3Nlc3MgaW5mb3JtYXRpb24gdGhleSBjb3VsZCBub3QgcmVhc29uYWJseSBoYXZlIG9idGFpbmVkLgoKRm9yIHRoaXMgcmVhc29uIHRoZSBhcmNoaXZlIHJlbWFpbnMgdW5kZXIgb2JzZXJ2YXRpb24uCgpJZiB5b3UgY29udGludWUgYmV5b25kIHRoaXMgcG9pbnQsIHlvdSB3aWxsIGVuY291bnRlciBlbmNvZGVkIG1hdGVyaWFsIHJlcXVpcmluZyBpbmRlcGVuZGVudCBhbmFseXNpcy4gU29tZSBmaWxlcyBtYXkgYmUgaW5jb21wbGV0ZS4gU29tZSBtYXkgYmUgY29ycnVwdGVkLiBTb21lIG1heSBoYXZlIGJlZW4gYWx0ZXJlZCBpbnRlbnRpb25hbGx5LgoKQXNzdW1lIG5vdGhpbmcuCgpUcnVzdCBub3RoaW5nLgoKVmVyaWZ5IGV2ZXJ5dGhpbmcuCgpPbmUgZmluYWwgd2FybmluZy4KClRoZSBhcmNoaXZlIHJlcGVhdGVkbHkgcmVmZXJzIHRvIGluZGl2aWR1YWxzIGtub3duIGFzIENvbm5lY3RvcnMuCgpUaGVzZSBpbmRpdmlkdWFscyBzaGFyZSBvbmUgY29tbW9uIGNoYXJhY3RlcmlzdGljLgoKVGhleSBjb250aW51ZS4KCldoZW4gb3RoZXJzIGxlYXZlLCB0aGV5IGNvbnRpbnVlLgoKV2hlbiBvdGhlcnMgZGlzbWlzcyB0aGUgZXZpZGVuY2UsIHRoZXkgY29udGludWUuCgpXaGVuIG90aGVycyBzdG9wIGFza2luZyBxdWVzdGlvbnMsIHRoZXkgY29udGludWUuCgpJZiB0aGUgcmVjb3ZlcmVkIGZpbGVzIGFyZSBhY2N1cmF0ZSwgdGhlIGFyY2hpdmUgZG9lcyBub3Qgc2VhcmNoIGZvciBldmVyeW9uZS4KClRoZSBhcmNoaXZlIHNlYXJjaGVzIGZvciB0aGVtLgoKQVJDSElWRSBBQ0NFU1MgR1JBTlRFRC4KClRSQU5TTUlTU0lPTl8wMDEgQVZBSUxBQkxFLgoKUHJvY2VlZCBhdCB5b3VyIG93biByaXNrLg==`;
 
 const screen = document.getElementById("screen");
 const lockout = document.getElementById("lockout");
@@ -85,8 +98,14 @@ function start(){
     return;
   }
   localStorage.removeItem(LOCK_KEY);
-  const decoded = atob(base64Payload);
-  typeText(screen, decoded, () => {
+
+  const fullText = plainHeader + base64Payload + `
+
+--------------------------------
+END RECOVERED TRANSMISSION
+--------------------------------`;
+
+  typeText(screen, fullText, () => {
     setTimeout(() => {
       const until = Date.now() + LOCK_TIME;
       localStorage.setItem(LOCK_KEY, until);
