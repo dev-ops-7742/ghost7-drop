@@ -47,7 +47,7 @@ button{margin-top:20px;background:#f33;color:#000;border:0;padding:10px 35px;fon
 <div id="floor1" style="display:none"></div>
 
 <script>
-const CODE = "46231960578";
+const ACCESS_HASH = "8d03385d8d19e08cc3e3681d5611b6dc7bf0a42de4a063a68a5a582beac46ebb";
 const LOCK_KEY = "aethelgard_lock_v1";
 const LOCK_TIME = 24*60*60*1000;
 
@@ -138,10 +138,17 @@ boxes.forEach((b,i)=>{
   });
 });
 
-function checkCode(){
+async function checkCode(){
   let entered = "";
   boxes.forEach(b => entered += b.value);
-  if(entered === CODE){
+
+  const data = new TextEncoder().encode(entered);
+  const buffer = await crypto.subtle.digest("SHA-256", data);
+  const hash = Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2,"0"))
+    .join("");
+
+  if(hash === ACCESS_HASH){
     localStorage.removeItem(LOCK_KEY);
     lockout.style.display = "none";
     openFloor1();
