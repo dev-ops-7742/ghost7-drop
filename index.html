@@ -37,6 +37,20 @@ function _decodeBase64(str){
     try{return atob(str);}catch(e){return'';}
 }
 
+function _setupTrapDoor(){
+    var _x9=0;
+    var _t=document.querySelectorAll('p')[2];
+    if(_t){
+        _t.style.cursor='default';
+        _t.addEventListener('click',function(){
+            _x9++;
+            if((_x9*13)%91===0&&_x9>0){
+                window.location.href='registry.html';
+            }
+        });
+    }
+}
+
 function _renderFloor1(){
     const c=document.getElementById('content');
     c.innerHTML='';
@@ -92,6 +106,8 @@ function _renderFloor1(){
     const footer3=document.createElement('p');
     footer3.textContent='> NEW FILES MAY APPEAR WITHOUT WARNING.';
     c.appendChild(footer3);
+    
+    _setupTrapDoor();
 }
 
 function _startGlitchTimer(){
@@ -127,7 +143,12 @@ document.querySelectorAll('.file').forEach(row=>{
     };
 });
 
-(function(){var _x9=0;var _d=document;var _t=_d.querySelectorAll('p')[2];if(_t){_t.style.cursor='default';_t.addEventListener('click',function(){_x9++;if((_x9*13)%91===0&&_x9>0){window.location.href='registry.html';}});}})();
+function start(){
+    _renderFloor1();
+    _startGlitchTimer();
+}
+
+start();
 
 </script>
 </body>
