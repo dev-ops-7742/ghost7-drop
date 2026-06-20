@@ -1,174 +1,149 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>GHOST7-DROP // SECURE ACCESS</title>
-<style>
-body{background:#000;color:#0f0;font-family:'Courier New',monospace;padding:20px;overflow-x:hidden}
-p{margin:5px 0}
-.file{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #0f3;cursor:pointer}
-.file:hover{background:#011}
-.name{color:#4af}
-.status{color:#f44}
-.good{color:#4f4}
-.error{color:#f00;margin-top:10px}
-#timer{position:fixed;top:10px;right:10px;color:#f00;font-size:24px}
-input{background:#000;color:#0f0;border:1px solid #0f0;padding:10px;font-family:'Courier New',monospace;font-size:16px;width:300px}
-button{background:#0f0;color:#000;border:none;padding:10px 20px;font-family:'Courier New',monospace;font-size:16px;cursor:pointer;margin-left:10px}
-button:hover{background:#0a0}
-.hidden{display:none}
-</style>
+    <meta charset="UTF-8">
+    <title>GHOST7-DROP</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; padding: 20px; }
+        .file { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #0f0; cursor: pointer; }
+        .name { color: #4af; }
+        .status { color: #f44; }
+        .good { color: #4f4; }
+        .error { color: #f00; margin-top: 10px; }
+        input { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; font-family: 'Courier New', monospace; margin-right: 10px; }
+        button { background: #0f0; color: #000; border: none; padding: 10px 20px; font-family: 'Courier New', monospace; cursor: pointer; }
+    </style>
 </head>
 <body>
-<div id="timer" class="hidden"></div>
-<div id="content"></div>
+    <div id="terminal"></div>
+    
+    <div id="lockout" style="display:none;">
+        <p style="color:#f00; font-size:24px;">> SYSTEM LOCKED. ACCESS DENIED.</p>
+        <p>> 24-hour security protocol engaged.</p>
+        <p>> Enter CERN geospatial key to override:</p>
+        <input type="text" id="keyInput" placeholder="Enter 11-digit key...">
+        <button onclick="checkKey()">AUTHENTICATE</button>
+        <p id="errorMsg" class="error"></p>
+    </div>
 
-<script>
-const _intro="VEhFIMOGVEhFTEdBUkQgUFJPVE9DT0wgLSBUUkFOU01JU1NJT04gMDAxCgpNeSBuYW1lIGlzIG5vdCBpbXBvcnRhbnQuIFRoZSBkYXRlIGlzLiBJIGFtIHNwZWFraW5nIHRvIHlvdSBmcm9tIHRoZSB5ZWFyIDMwMjYuIElmIHRoaXMgbWVzc2FnZSBoYXMgcmVhY2hlZCB5b3UsIHRoZW4gdGhlIHRyYW5zbWlzc2lvbiBjb3JyaWRvciBpcyBzdGlsbCBvcGVuLCB3aGljaCBtZWFucyB3ZSBzdGlsbCBoYXZlIGEgY2hhbmNlLiBGb3IgbW9zdCBvZiBodW1hbiBoaXN0b3J5LCBwZW9wbGUgYmVsaWV2ZWQgdGltZSB3YXMgYSByaXZlciBmbG93aW5nIGluIG9uZSBkaXJlY3Rpb27igJRwYXN0LCBwcmVzZW50LCBmdXR1cmUuIFRoYXQgd2FzIHdyb25nLiBUaW1lIGlzIGEgc3RydWN0dXJlLCBhIGZyYW1ld29yaywgYSBmYWJyaWMsIGFuZCBpbiBteSBjZW50dXJ5IHdlIGJyb2tlIGl0LiBUaGUgZXZlbnQgYmVnYW4gd2l0aCB3aGF0IGhpc3RvcnkgcmVjb3JkcyBhcyBhIHNjaWVudGlmaWMgYnJlYWt0aHJvdWdoLCBidXQgd2hhdCB3ZSBub3cga25vdyB3YXMgdGhlIGZpcnN0IGZyYWN0dXJlLiBUaGUgdW5vZmZpY2lhbCByZWNvcmRzIHBvaW50IHRvIGV4cGVyaW1lbnRzIGNvbm5lY3RlZCB0byBDRVJOLCB3aGVyZSBodW1hbml0eSBwdXNoZWQgZnVydGhlciBpbnRvIHRoZSBuYXR1cmUgb2YgcmVhbGl0eSB0aGFuIGl0IHVuZGVyc3Rvb2QuIEF0IGZpcnN0IHRoZSBkYW1hZ2Ugd2FzIG1pY3Jvc2NvcGljOiBtaXNzaW5nIHNlY29uZHMsIGZvcmdvdHRlbiBjb252ZXJzYXRpb25zLCByZWNvcmRzIGFwcGVhcmluZyB3aGVyZSB0aGV5IHNob3VsZCBub3QgZXhpc3QsIHBlb3BsZSByZW1lbWJlcmluZyBldmVudHMgZGlmZmVyZW50bHkuIE5vYm9keSBsaXN0ZW5lZC4gSHVtYW5pdHkgbmV2ZXIgZG9lcy4gQnkgdGhlIHR3ZW50eS1zZWNvbmQgY2VudHVyeSB0aGUgZnJhY3R1cmVzIGhhZCBncm93bi4gQnkgdGhlIHR3ZW50eS1mb3VydGggY2VudHVyeSBlbnRpcmUgaGlzdG9yaWNhbCBldmVudHMgZXhpc3RlZCBpbiBtdWx0aXBsZSB2ZXJzaW9ucy4gUGVvcGxlIHJlbWVtYmVyZWQgZGlmZmVyZW50IGVsZWN0aW9ucywgZGlmZmVyZW50IHdhcnMsIGRpZmZlcmVudCBvdXRjb21lcy4gUmVhbGl0eSBpdHNlbGYgYmVjYW1lIHVuc3RhYmxlLiBCeSB0aGUgdHdlbnR5LWVpZ2h0aCBjZW50dXJ5IHRoZSBkYW1hZ2Ugd2FzIGlycmV2ZXJzaWJsZS4gVGhlIGZ1dHVyZSBiZWNhbWUgaW5mZWN0ZWQgYnkgY29tcGV0aW5nIHRpbWVsaW5lcy4gQ2l0aWVzIGFwcGVhcmVkIGFuZCB2YW5pc2hlZC4gU2NpZW50aWZpYyBsYXdzIGRyaWZ0ZWQuIENpdmlsaXphdGlvbnMgcm9zZSBhbmQgZGlzYXBwZWFyZWQgYmV0d2VlbiBvbmUgZ2VuZXJhdGlvbiBhbmQgdGhlIG5leHQuIEVudGlyZSBjZW50dXJpZXMgd2VyZSByZXdyaXR0ZW4gb3Zlcm5pZ2h0LiBUb2RheSwgaW4gdGhlIHllYXIgMzAyNiwgaHVtYW5pdHkgc3Vydml2ZXMsIGJ1dCBiYXJlbHkuIFRoZSBUZW1wb3JhbCBDb2xsYXBzZSBpcyBhY2NlbGVyYXRpbmcgYW5kIG91ciBncmVhdGVzdCBtaW5kcyBoYXZlIHJlYWNoZWQgYSB0ZXJyaWZ5aW5nIGNvbmNsdXNpb246IHRoZSBkYW1hZ2UgY2Fubm90IGJlIHJlcGFpcmVkIGZyb20gb3VyIHRpbWUuIEl0IG11c3QgYmUgcmVwYWlyZWQgZnJvbSB5b3Vycy4gU29tZXdoZXJlIGluIHlvdXIgY2VudHVyeSBsaWVzIHRoZSBmcmFjdHVyZSBwb2ludCB0aGF0IGV2ZW50dWFsbHkgZGVzdHJveXMgb3Vycy4gVGhhdCBpcyB3aHkgdGhpcyB0cmFuc21pc3Npb24gZXhpc3RzLiBXZSBhcmUgbm90IGxvb2tpbmcgZm9yIHNvbGRpZXJzLCBwb2xpdGljaWFucywgY2VsZWJyaXRpZXMsIG9yIGZvbGxvd2Vycy4gV2UgYXJlIGxvb2tpbmcgZm9yIHRoaW5rZXJzLCBidWlsZGVycywgcmVzZWFyY2hlcnMsIHByb2JsZW0tc29sdmVycywgZHJlYW1lcnMsIGFuZCB0aG9zZSByYXJlIGluZGl2aWR1YWxzIHdobyBzdGFyZSBhdCBpbXBvc3NpYmxlIHF1ZXN0aW9ucyBhbmQgcmVmdXNlIHRvIGxvb2sgYXdheS4gV2Ugc2VlayB0ZW4gaW50ZWxsZWN0dWFscy4gVGVuIGdlbml1cy4gVGVuIG1pbmRzIGNhcGFibGUgb2Ygc2VlaW5nIGJleW9uZCB0aGUgbGltaXRzIG9mIGNvbnZlbnRpb25hbCB0aG91Z2h0LiBNYXRoZW1hdGljaWFucywgcGh5c2ljaXN0cywgY3J5cHRvZ3JhcGhlcnMsIGVuZ2luZWVycywgaGlzdG9yaWFucywgbGluZ3Vpc3RzLCBhcnRpZmljaWFsIGludGVsbGlnZW5jZSByZXNlYXJjaGVycywgcHV6emxlIHNvbHZlcnMsIHBhdHRlcm4gcmVjb2duaXNlcnMsIGFuZCBhbnlvbmUgd2hvIG5vdGljZXMgd2hhdCBvdGhlcnMgaWdub3JlLiBJZiB5b3UgYXJlIHJlYWRpbmcgdGhpcywgYXNrIHlvdXJzZWxmIHdoeSB0aGlzIG1lc3NhZ2UgZm91bmQgeW91LCB3aHkgeW91IGFyZSBzdGlsbCByZWFkaW5nLCBhbmQgd2h5IGEgcGFydCBvZiB5b3UgYmVsaWV2ZXMgaXQgY291bGQgYmUgdHJ1ZS4gVGhlIMOGdGhlbGdhcmQgUHJvdG9jb2wgaGFzIGJlZ3VuLiBUaGUgZnV0dXJlIGlzIGNhbGxpbmcgZm9yIHZvbHVudGVlcnMsIG5vdCB0byBzYXZlIHRoZSB3b3JsZCwgYnV0IHRvIHNhdmUgdGltZSBpdHNlbGYuIFRlbiBuYW1lcyB3aWxsIGJlIHJlcXVpcmVkLiBUZW4gbWluZHMgd2lsbCBiZSBjaG9zZW4uIFRlbiBkb29ycyB3aWxsIGV2ZW50dWFsbHkgb3Blbi4gQW5kIHdoZW4gdGhleSBkbywgaHVtYW5pdHkncyBmdXR1cmUgbWF5IGRlcGVuZCBvbiB3aG8gd2Fsa3MgdGhyb3VnaCB0aGVtLiBUaGUgZmlyc3QgcXVlc3Rpb24gaXMgc2ltcGxlOiBpZiB0aW1lIHdlcmUgYnJva2VuLCBob3cgd291bGQgeW91IHByb3ZlIGl0PyBUaGUgc2VhcmNoIGJlZ2lucyBub3cuIEVuZCBUcmFuc21pc3Npb24gMDAxLgo=";
+    <!-- Hardcoded files exactly as your original screenshot -->
+    <div id="file-list" style="display:none;">
+        <p>> AUTHENTICATION ACCEPTED.</p>
+        <p>> CONNECTOR VERIFIED.</p>
+        <p>> FLOOR 1 ACCESS GRANTED.</p>
+        <p>> INDEX OF /SECURE_DROP/GHOST7/</p>
+        <br>
 
-const _t_enc="VEhFIMOGVEhFTEdBUkQgUFJPVE9DT0wgLSBUUkFOU01JU1NJT04gMDAxCgpNeSBuYW1lIGlzIG5vdCBpbXBvcnRhbnQuIFRoZSBkYXRlIGlzLiBJIGFtIHNwZWFraW5nIHRvIHlvdSBmcm9tIHRoZSB5ZWFyIDMwMjYuIElmIHRoaXMgbWVzc2FnZSBoYXMgcmVhY2hlZCB5b3UsIHRoZW4gdGhlIHRyYW5zbWlzc2lvbiBjb3JyaWRvciBpcyBzdGlsbCBvcGVuLCB3aGljaCBtZWFucyB3ZSBzdGlsbCBoYXZlIGEgY2hhbmNlLg==";
+        <div class="file" data-file="transmission_002.html"><span class="name">transmission_002.html</span><span class="status">[LOCKED] | 4.2 KB</span></div>
+        <div class="file" data-file="surveillance_log_shanghai.dat"><span class="name">surveillance_log_shanghai.dat</span><span class="status">[ENCRYPTED] | 842 KB</span></div>
+        <div class="file" data-file="candidate_0912.html"><span class="name">candidate_0912.html</span><span class="status good">[ACTIVE] | 6.1 KB</span></div>
+        <div class="file" data-file="candidate_2046.html"><span class="name">candidate_2046.html</span><span class="status good">[CERN TRACE] | 7.4 KB</span></div>
+        <div class="file" data-file="candidate_6621.html"><span class="name">candidate_6621.html</span><span class="status">[ALL EYES] | 5.9 KB</span></div>
+        <div class="file" data-file="nero_link_001.html"><span class="name">nero_link_001.html</span><span class="status">[RED CHANNEL] | 9.2 KB</span></div>
+        <div class="file" data-file="ghost7_manifest.json"><span class="name">ghost7_manifest.json</span><span class="status">[PURGED] | 0 KB</span></div>
+        <div class="file" data-file="iron_door.ref"><span class="name">iron_door.ref</span><span class="status">[UNRESOLVED] | 13 B</span></div>
 
-let _lastClickTime=0;
-let _glitchShown=false;
-let _unlocked=false;
+        <br>
+        <p>> FLOOR 1 IS OPEN.</p>
+        <p>> NEW FILES MAY APPEAR WITHOUT WARNING.</p>
+    </div>
 
-function _decode(str){try{return atob(str);}catch(e){return'';}}
+    <script>
+        const _t_enc = "VEhFIMOGVEhFTEdBUkQgUFJPVE9DT0wgLSBUUkFOU01JU1NJT04gMDAxCgpNeSBuYW1lIGlzIG5vdCBpbXBvcnRhbnQuIFRoZSBkYXRlIGlzLiBJIGFtIHNwZWFraW5nIHRvIHlvdSBmcm9tIHRoZSB5ZWFyIDMwMjYuIElmIHRoaXMgbWVzc2FnZSBoYXMgcmVhY2hlZCB5b3UsIHRoZW4gdGhlIHRyYW5zbWlzc2lvbiBjb3JyaWRvciBpcyBzdGlsbCBvcGVuLCB3aGljaCBtZWFucyB3ZSBzdGlsbCBoYXZlIGEgY2hhbmNlLg==";
+        let _lastClickTime = Date.now();
 
-function _typeIntro(){
-    const c=document.getElementById('content');
-    const msg=_decode(_intro);
-    let i=0;
-    const interval=setInterval(()=>{
-        if(i<msg.length){
-            if(c.lastChild&&c.lastChild.nodeType===3){
-                c.lastChild.textContent+=msg[i];
-            }else{
-                const p=document.createElement('p');
-                p.textContent=msg[i];
-                c.appendChild(p);
+        function showTerminalError(msg) {
+            const err = document.createElement('p');
+            err.className = 'error';
+            err.textContent = '> ' + msg;
+            document.body.appendChild(err);
+        }
+
+        function typeWriter(text, elementId, speed, callback) {
+            let i = 0;
+            const el = document.getElementById(elementId);
+            el.innerHTML = '';
+            const p = document.createElement('p');
+            el.appendChild(p);
+            function type() {
+                if (i < text.length) {
+                    p.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                } else if (callback) {
+                    callback();
+                }
             }
-            i++;
-        }else{
-            clearInterval(interval);
-            setTimeout(_lockout,3000);
+            type();
         }
-    },50);
-}
 
-function _lockout(){
-    const c=document.getElementById('content');
-    c.innerHTML='';
-    const p=document.createElement('p');
-    p.style.color='#f00';
-    p.style.fontSize='24px';
-    p.textContent='> SYSTEM LOCKED. ACCESS DENIED.';
-    c.appendChild(p);
-    
-    const p2=document.createElement('p');
-    p2.textContent='> 24-hour security protocol engaged.';
-    c.appendChild(p2);
-    
-    const p3=document.createElement('p');
-    p3.textContent='> Enter CERN geospatial key to override:';
-    c.appendChild(p3);
-    
-    const input=document.createElement('input');
-    input.type='text';
-    input.id='keyInput';
-    input.placeholder='Enter 11-digit key...';
-    c.appendChild(input);
-    
-    const btn=document.createElement('button');
-    btn.textContent='AUTHENTICATE';
-    btn.onclick=_checkKey;
-    c.appendChild(btn);
-    
-    const err=document.createElement('p');
-    err.id='errorMsg';
-    err.className='error';
-    c.appendChild(err);
-}
-
-function _checkKey(){
-    const key=document.getElementById('keyInput').value;
-    const err=document.getElementById('errorMsg');
-    if(key==='11235813213'){
-        _unlocked=true;
-        _renderFloor1();
-    }else{
-        err.textContent='> INVALID KEY. ACCESS DENIED.';
-    }
-}
-
-function _renderFloor1(){
-    const c=document.getElementById('content');
-    c.innerHTML='';
-    
-    const lines=[
-        '> AUTHENTICATION ACCEPTED.',
-        '> CONNECTOR VERIFIED.',
-        '> FLOOR 1 ACCESS GRANTED.',
-        '> INDEX OF /SECURE_DROP/GHOST7/',
-        ''
-    ];
-    lines.forEach(t=>{const p=document.createElement('p');p.textContent=t;c.appendChild(p);});
-    
-    const files=[
-        ['transmission_002.html','[LOCKED]','4.2 KB'],
-        ['surveillance_log_shanghai.dat','[ENCRYPTED]','842 KB'],
-        ['candidate_0912.html','[ACTIVE]','6.1 KB'],
-        ['candidate_2046.html','[CERN TRACE]','7.4 KB'],
-        ['candidate_6621.html','[ALL EYES]','5.9 KB'],
-        ['nero_link_001.html','[RED CHANNEL]','9.2 KB'],
-        ['ghost7_manifest.json','[PURGED]','0 KB'],
-        ['iron_door.ref','[UNRESOLVED]','13 B']
-    ];
-    
-    files.forEach(f=>{
-        const row=document.createElement('div');
-        row.className='file';
-        row.innerHTML='<span class="name">'+f[0]+'</span><span class="status">'+f[1]+' | '+f[2]+'</span>';
-        c.appendChild(row);
-    });
-    
-    const p1=document.createElement('p');p1.textContent='';c.appendChild(p1);
-    const p2=document.createElement('p');p2.textContent='> FLOOR 1 IS OPEN.';c.appendChild(p2);
-    const p3=document.createElement('p');p3.textContent='> NEW FILES MAY APPEAR WITHOUT WARNING.';c.appendChild(p3);
-    
-    // 7-CLICK TRAP DOOR
-    let clicks=0;
-    const target=document.querySelectorAll('p')[2];
-    if(target){
-        target.style.cursor='pointer';
-        target.onclick=function(){
-            clicks++;
-            if(clicks===7){window.location.href='registry.html';}
-        };
-    }
-    
-    _startGlitchTimer();
-}
-
-function _startGlitchTimer(){
-    document.getElementById('timer').classList.remove('hidden');
-    setInterval(()=>{
-        if(_unlocked&&!_glitchShown&&(Date.now()-_lastClickTime)>90000){
-            _glitchShown=true;
-            const c=document.getElementById('content');
-            const p=document.createElement('p');
-            p.style.cssText='color:#0f0;font-size:10px;word-break:break-all;';
-            p.textContent=_decode(_t_enc);
-            c.appendChild(p);
-            setTimeout(()=>{p.remove();_glitchShown=false;},5000);
+        function checkKey() {
+            const key = document.getElementById('keyInput').value;
+            if (key === '11235813213') {
+                document.getElementById('lockout').style.display = 'none';
+                document.getElementById('file-list').style.display = 'block';
+                setupTrapDoor();
+            } else {
+                document.getElementById('errorMsg').textContent = '> INVALID KEY.';
+            }
         }
-        const remaining=Math.max(0,15-Math.floor((Date.now()-_lastClickTime)/1000));
-        document.getElementById('timer').textContent=remaining+'s';
-    },1000);
-}
 
-document.addEventListener('click',()=>{_lastClickTime=Date.now();});
+        function setupTrapDoor() {
+            let clicks = 0;
+            // Targets the 3rd paragraph (FLOOR 1 ACCESS GRANTED)
+            const paragraphs = document.querySelectorAll('#file-list p');
+            if(paragraphs[2]) { 
+                 paragraphs[2].style.cursor = 'default';
+                 paragraphs[2].onclick = function() {
+                     clicks++;
+                     if(clicks === 7) { window.location.href='registry.html'; }
+                 };
+            }
+        }
 
-_typeIntro();
-</script>
+        // EXACT LOOP FROM YOUR SCREENSHOT
+        document.querySelectorAll('.file').forEach(row => {
+            row.onclick = () => {
+                _lastClickTime = Date.now();
+                const fname = row.getAttribute('data-file');
+                const status = row.querySelector('.status, .good').textContent;
+                if (status.includes('[LOCKED]') || status.includes('[PURGED]')) {
+                    showTerminalError(`${fname} is corrupted or restricted.`);
+                } else if (status.includes('[ENCRYPTED]')) {
+                    showTerminalError(`Decryption key required for ${fname}.`);
+                } else if (status.includes('[ALL EYES]') || status.includes('[RED CHANNEL]')) {
+                    showTerminalError(`Clearance level insufficient for ${fname}.`);
+                } else if (status.includes('[UNRESOLVED]')) {
+                    showTerminalError(`${fname} contains unresolved temporal anomalies.`);
+                } else {
+                    showTerminalError(`${fname} loaded into buffer. Awaiting manual extraction.`);
+                }
+            };
+        });
+
+        function start() {
+            const decodedIntro = atob("VEhFIMOGVEhFTEdBUkQgUFJPVE9DT0wgLSBUUkFOU01JU1NJT04gMDAxCgpNeSBuYW1lIGlzIG5vdCBpbXBvcnRhbnQuIFRoZSBkYXRlIGlzLiBJIGFtIHNwZWFraW5nIHRvIHlvdSBmcm9tIHRoZSB5ZWFyIDMwMjYuIElmIHRoaXMgbWVzc2FnZSBoYXMgcmVhY2hlZCB5b3UsIHRoZW4gdGhlIHRyYW5zbWlzc2lvbiBjb3JyaWRvciBpcyBzdGlsbCBvcGVuLCB3aGljaCBtZWFucyB3ZSBzdGlsbCBoYXZlIGEgY2hhbmNlLg==");
+            typeWriter(decodedIntro, 'terminal', 20, () => {
+                setTimeout(() => {
+                    document.getElementById('terminal').style.display = 'none';
+                    document.getElementById('lockout').style.display = 'block';
+                }, 3000);
+            });
+        }
+
+        // Glitch timer (15000ms as you requested)
+        setInterval(() => {
+            if (Date.now() - _lastClickTime > 15000) { 
+                const p = document.createElement('p');
+                p.style.cssText = 'color:#0f0; font-size:10px; word-break:break-all;';
+                p.textContent = atob(_t_enc);
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 5000);
+                _lastClickTime = Date.now(); 
+            }
+        }, 1000);
+
+        start();
+    </script>
 </body>
 </html>
