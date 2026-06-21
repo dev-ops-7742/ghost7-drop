@@ -1,149 +1,255 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>GHOST7-DROP</title>
-    <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; padding: 20px; }
-        .file { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #0f0; cursor: pointer; }
-        .name { color: #4af; }
-        .status { color: #f44; }
-        .good { color: #4f4; }
-        .error { color: #f00; margin-top: 10px; }
-        input { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; font-family: 'Courier New', monospace; margin-right: 10px; }
-        button { background: #0f0; color: #000; border: none; padding: 10px 20px; font-family: 'Courier New', monospace; cursor: pointer; }
-    </style>
+<meta charset="UTF-8">
+<title>THE AETHELGARD ARCHIVE // SECURE DROP</title>
+<style>
+body{margin:0;background:#000;color:#0f0;font-family:Courier New,monospace;font-size:15px;overflow:hidden;height:100vh;display:flex;justify-content:center;align-items:center}
+.scanlines{position:fixed;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,.35) 50%);background-size:100% 4px;pointer-events:none;z-index:10}
+#screen,#floor1{width:90%;max-width:900px;height:82vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;text-shadow:0 0 6px #0f0;scrollbar-width:none}
+#screen::-webkit-scrollbar,#floor1::-webkit-scrollbar{display:none}
+.cursor{display:inline-block;width:10px;height:18px;background:#0f0;animation:blink .8s infinite}
+@keyframes blink{50%{opacity:0}}
+#lockout{display:none;position:fixed;inset:0;background:#000;z-index:20;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+#lockout h1{color:#f33;text-shadow:0 0 12px red;font-size:30px}
+#countdown{color:#f33;font-size:48px;letter-spacing:5px;text-shadow:0 0 14px red;margin:25px}
+.box{width:34px;height:44px;margin:4px;background:#111;border:1px solid #f33;color:#f33;font-size:22px;text-align:center;font-family:Courier New}
+.box:focus{outline:none;border-color:white;color:white}
+button{margin-top:20px;background:#f33;color:#000;border:0;padding:10px 35px;font-weight:bold;font-family:Courier New;cursor:pointer}
+#error{display:none;color:#f33;margin-top:15px}
+.file{display:flex;justify-content:space-between;border-bottom:1px solid #123;padding:10px 0;cursor:pointer}
+.name{color:#49f}
+.status{color:#f33}
+.good{color:#0f0}
+.term-err{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#000;border:1px solid #f33;color:#f33;padding:10px 20px;font-family:Courier New;z-index:100;white-space:nowrap}
+#glitch-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:60;overflow:hidden;padding:20px;font-family:Courier New;color:#0f0;font-size:12px;white-space:pre-wrap;word-break:break-all;display:none}
+</style>
 </head>
+
 <body>
-    <div id="terminal"></div>
+<div class="scanlines"></div>
+<div id="screen"></div>
+
+<div id="lockout">
+<h1>⚠ TEMPORAL LOCKOUT ACTIVE ⚠</h1>
+<p>UNAUTHORIZED OBSERVATION DETECTED. DATA STREAM TERMINATED.</p>
+<p>ENTER 11-DIGIT GEOSPATIAL KEY TO ACCESS FLOOR 1.</p>
+<div id="countdown">--:--:--</div>
+<div id="grid">
+<input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1">
+</div>
+<p style="color:#555;font-size:12px">// REFERENCE: EUROPEAN NUCLEAR RESEARCH FACILITY //</p>
+<button onclick="checkCode()">AUTHENTICATE</button>
+<p id="error">SEQUENCE INVALID. TEMPORAL FRACTURE DETECTED.</p>
+</div>
+
+<div id="floor1" style="display:none"></div>
+<div id="glitch-overlay"></div>
+
+<script>
+const ACCESS_HASH = "8d03385d8d19e08cc3e3681d5611b6dc7bf0a42de4a063a68a5a582beac46ebb";
+const LOCK_KEY = "aethelgard_lock_v1";
+const LOCK_TIME = 24*60*60*1000;
+
+// ENCODED TRANSMISSIONS 001-013 (HIDDEN FROM SOURCE VIEW)
+const _t_enc = "VEhFIMOGVEhFTEdBUkQgUFJPVE9DT0wgLSBUUkFOU01JU1NJT04gMDAxIE15IG5hbWUgaXMgbm90IGltcG9ydGFudC4gVGhlIGRhdGUgaXMuIEkgYW0gc3BlYWtpbmcgdG8geW91IGZyb20gdGhlIHllYXIgMzAyNi4gSWYgdGhpcyBtZXNzYWdlIGhhcyByZWFjaGVkIHlvdSwgdGhlbiB0aGUgdHJhbnNtaXNzaW9uIGNvcnJpZG9yIGlzIHN0aWxsIG9wZW4sIHdoaWNoIG1lYW5zIHdlIHN0aWxsIGhhdmUgYSBjaGFuY2UuIEZvciBtb3N0IG9mIGh1bWFuIGhpc3RvcnksIHBlb3BsZSBiZWxpZXZlZCB0aW1lIHdhcyBhIHJpdmVyIGZsb3dpbmcgaW4gb25lIGRpcmVjdGlvbuKAkHBhc3QsIHByZXNlbnQsIGZ1dHVyZS4gVGhhdCB3YXMgd3JvbmcuIFRpbWUgaXMgYSBzdHJ1Y3R1cmUsIGEgZnJhbWV3b3JrLCBhIGZhYnJpYywgYW5kIGluIG15IGNlbnR1cnkgd2UgYnJva2UgaXQuIFRoZSBldmVudCBiZWdhbiB3aXRoIHdoYXQgaGlzdG9yeSByZWNvcmRzIGFzIGEgc2NpZW50aWZpYyBicmVha3Rocm91Z2gsIGJ1dCB3aGF0IHdlIG5vdyBrbm93IHdhcyB0aGUgZmlyc3QgZnJhY3R1cmUuIFRoZSB1bm9mZmljaWFsIHJlY29yZHMgcG9pbnQgdG8gZXhwZXJpbWVudHMgY29ubmVjdGVkIHRvIENFUk4sIHdoZXJlIGh1bWFuaXR5IHB1c2hlZCBmdXJ0aGVyIGludG8gdGhlIG5hdHVyZSBvZiByZWFsaXR5IHRoYW4gaXQgdW5kZXJzdG9vZC4gQXQgZmlyc3QgdGhlIGRhbWFnZSB3YXMgbWljcm9zY29waWM6IG1pc3Npbmcgc2Vjb25kcywgZm9yZ290dGVuIGNvbnZlcnNhdGlvbnMsIHJlY29yZHMgYXBwZWFyaW5nIHdoZXJlIHRoZXkgc2hvdWxkIG5vdCBleGlzdCwgcGVvcGxlIHJlbWVtYmVyaW5nIGV2ZW50cyBkaWZmZXJlbnRseS4gTm9ib2R5IGxpc3RlbmVkLiBIdW1hbml0eSBuZXZlciBkb2VzLiBCeSB0aGUgdHdlbnR5LXNlY29uZCBjZW50dXJ5IHRoZSBmcmFjdHVyZXMgaGFkIGdyb3duLiBCeSB0aGUgdHdlbnR5LWZvdXJ0aCBjZW50dXJ5IGVudGlyZSBoaXN0b3JpY2FsIGV2ZW50cyBleGlzdGVkIGluIG11bHRpcGxlIHZlcnNpb25zLiBQZW9wbGUgcmVtZW1iZXJlZCBkaWZmZXJlbnQgZWxlY3Rpb25zLCBkaWZmZXJlbnQgd2FycywgZGlmZmVyZW50IG91dGNvbWVzLiBSZWFsaXR5IGl0c2VsZiBiZWNhbWUgdW5zdGFibGUuIEJ5IHRoZSB0d2VudHktZWlnaHRoIGNlbnR1cnkgdGhlIGRhbWFnZSB3YXMgaXJyZXZlcnNpYmxlLiBUaGUgZnV0dXJlIGJlY2FtZSBpbmZlY3RlZCBieSBjb21wZXRpbmcgdGltZWxpbmVzLiBDaXRpZXMgYXBwZWFyZWQgYW5kIHZhbmlzaGVkLiBTY2llbnRpZmljIGxhd3MgZHJpZnRlZC4gQ2l2aWxpc2F0aW9ucyByb3NlIGFuZCBkaXNhcHBlYXJlZCBiZXR3ZWVuIG9uZSBnZW5lcmF0aW9uIGFuZCB0aGUgbmV4dC4gRW50aXJlIGNlbnR1cmllcyB3ZXJlIHJld3JpdHRlbiBvdmVybmlnaHQuIFRvZGF5LCBpbiB0aGUgeWVhciAzMDI2LCBodW1hbml0eSBzdXJ2aXZlcywgYnV0IGJhcmVseS4gVGhlIFRlbXBvcmFsIENvbGxhcHNlIGlzIGFjY2VsZXJhdGluZyBhbmQgb3VyIGdyZWF0ZXN0IG1pbmRzIGhhdmUgcmVhY2hlZCBhIHRlcnJpZnlpbmcgY29uY2x1c2lvbjogdGhlIGRhbWFnZSBjYW5ub3QgYmUgcmVwYWlyZWQgZnJvbSBvdXIgdGltZS4gSXQgbXVzdCBiZSByZXBhaXJlZCBmcm9tIHlvdXJzLiBTb21ld2hlcmUgaW4geW91ciBjZW50dXJ5IGxpZXMgdGhlIGZyYWN0dXJlIHBvaW50IHRoYXQgZXZlbnR1YWxseSBkZXN0cm95cyBvdXJzLiBUaGF0IGlzIHdoeSB0aGlzIHRyYW5zbWlzc2lvbiBleGlzdHMuIFdlIGFyZSBub3QgbG9va2luZyBmb3Igc29sZGllcnMsIHBvbGl0aWNpYW5zLCBjZWxlYnJpdGllcywgb3IgZm9sbG93ZXJzLiBXZSBhcmUgbG9va2luZyBmb3IgdGhpbmtlcnMsIGJ1aWxkZXJzLCByZXNlYXJjaGVycywgcHJvYmxlbS1zb2x2ZXJzLCBkcmVhbWVycywgYW5kIHRob3NlIHJhcmUgaW5kaXZpZHVhbHMgd2hvIHN0YXJlIGF0IGltcG9zc2libGUgcXVlc3Rpb25zIGFuZCByZWZ1c2UgdG8gbG9vayBhd2F5LiBXZSBzZWFrIHRlbiBpbnRlbGxlY3R1YWxzLiBUZW4gZ2VuaXVzLiBUZW4gbWluZHMgY2FwYWJsZSBvZiBzZWVpbmcgYmV5b25kIHRoZSBsaW1pdHMgb2YgY29udmVudGlvbmFsIHRob3VnaHQuIE1hdGhlbWF0aWNpYW5zLCBwaHlzaWNpc3RzLCBjcnlwdG9ncmFwaGVycywgZW5naW5lZXJzLCBoaXN0b3JpYW5zLCBsaW5ndWlzdHMsIGFydGlmaWNpYWwgaW50ZWxsaWdlbmNlIHJlc2VhcmNoZXJzLCBwdXp6bGUgc29sdmVycywgcGF0dGVybiByZWNvZ25pc2VycywgYW5kIGFueW9uZSB3aG8gbm90aWNlcyB3aGF0IG90aGVycyBpZ25vcmUuIElmIHlvdSBhcmUgcmVhZGluZyB0aGlzLCBhc2sgeW91cnNlbGYgd2h5IHRoaXMgbWVzc2FnZSBmb3VuZCB5b3UsIHdoeSB5b3UgYXJlIHN0aWxsIHJlYWRpbmcsIGFuZCB3aHkgYSBwYXJ0IG9mIHlvdSBiZWxpZXZlcyBpdCBjb3VsZCBiZSB0cnVlLiBUaGUg04Z0aGVsZ2FyZCBQcm90b2NvbCBoYXMgYmVndW4uIFRoZSBmdXR1cmUgaXMgY2FsbGluZyBmb3Igdm9sdW50ZWVycywgbm90IHRvIHNhdmUgdGhlIHdvcmxkLCBidXQgdG8gc2F2ZSB0aW1lIGl0c2VsZi4gVGVuIG5hbWVzIHdpbGwgYmUgcmVxdWlyZWQuIFRlbiBtaW5kcyB3aWxsIGJlIGNob3Nlbi4gVGVuIGRvb3JzIHdpbGwgZXZlbnR1YWxseSBvcGVuLiBBbmQgd2hlbiB0aGV5IGRvLCBodW1hbml0eSdzIGZ1dHVyZSBtYXkgZGVwZW5kIG9uIHdobyB3YWxrcyB0aHJvdWdoIHRoZW0uIFRoZSBmaXJzdCBxdWVzdGlvbiBpcyBzaW1wbGU6IGlmIHRpbWUgd2VyZSBicm9rZW4sIGhvdyB3b3VsZCB5b3UgcHJvdmUgaXQ/IFRoZSBzZWFyY2ggYmVnaW5zIG5vdy4gRW5kIFRyYW5zbWlzc2lvbiAwMDEu";
+
+const plainHeader = `THE ÆTHELGARD PROTOCOL\n\nARCHIVE STATUS: PARTIAL\n\nRECOVERY STATUS: 17%\n\n--------------------------------\nBEGIN RECOVERED TRANSMISSION\nENCODING: BASE64\n--------------------------------\n\n`;
+
+const base64Payload = `SWYgeW91IGFyZSByZWFkaW5nIHRoaXMsIHRoZW4gdGhlIGFyY2hpdmUgaXMgc3RpbGwgZnVuY3Rpb25pbmcuCgpUaGF0IHNob3VsZCBub3QgYmUgcG9zc2libGUuCgpUaGUgcmVjb3JkcyB5b3UgYXJlIGFib3V0IHRvIGFjY2VzcyB3ZXJlIG5vdCByZWNvdmVyZWQgZnJvbSBhIHNlcnZlciwgYSBkYXRhYmFzZSwgb3IgYSBnb3Zlcm5tZW50IHN5c3RlbS4gVGhleSB3ZXJlIHJlY292ZXJlZCBmcm9tIGEgdHJhbnNtaXNzaW9uIGNoYWluIHdob3NlIG9yaWdpbiBwb2ludCBoYXMgbm90IHlldCBvY2N1cnJlZC4KClRoZSBvbGRlc3QgZmlsZXMgaW4gdGhpcyBhcmNoaXZlIGFwcGVhciB0byBvcmlnaW5hdGUgZnJvbSB0aGUgeWVhciAzMDM2LgoKVGhlIG5ld2VzdCBmaWxlcyBhcHBlYXIgdG8gb3JpZ2luYXRlIGZyb20gdG9tb3Jyb3cuCgpUaGlzIGNvbnRyYWRpY3Rpb24gcmVtYWlucyB1bnJlc29sdmVkLgoKRm9yIHRoZSBsYXN0IGVsZXZlbiB5ZWFycyBmcmFnbWVudHMgaGF2ZSBhcHBlYXJlZCBhY3Jvc3MgdW5yZWxhdGVkIHN5c3RlbXMuIFNvbWUgYXJyaXZlZCB0aHJvdWdoIGNvcnJ1cHRlZCBiYWNrdXBzLiBTb21lIGFwcGVhcmVkIGluc2lkZSBkZWxldGVkIHN0b3JhZ2Ugdm9sdW1lcy4gU29tZSB3ZXJlIGRpc2NvdmVyZWQgZW1iZWRkZWQgd2l0aGluIGZpbGVzIHRoYXQgcHJlZGF0ZSB0aGVpciBvd24gY3JlYXRpb24gZGF0ZXMuCgpFdmVyeSBhdHRlbXB0IHRvIGV4cGxhaW4gdGhlc2UgZXZlbnRzIGhhcyBmYWlsZWQuCgpUaGUgYXJjaGl2ZSBjb250YWlucyByZWZlcmVuY2VzIHRvIFByb2plY3QgTlVMTCwgdGhlIFRoaXJ0ZWVudGggQXJjaGl2ZSwgdGhlIFJlZ2lzdHJ5LCBORVJPIExJTkssIHRoZSBJcm9uIERvb3IsIGFuZCBhbiBpbmRpdmlkdWFsIGlkZW50aWZ5aW5nIHRoZW1zZWx2ZXMgYXMgRWxpYXMgVm9zcy4KCk5vIHZlcmlmaWVkIHJlY29yZCBvZiBFbGlhcyBWb3NzIGV4aXN0cy4KCkRlc3BpdGUgdGhpcywgVm9zcyBhcHBlYXJzIHJlcGVhdGVkbHkgdGhyb3VnaG91dCB0aGUgcmVjb3ZlcmVkIG1hdGVyaWFsLgoKVGhlIHRyYW5zbWlzc2lvbnMgZGVzY3JpYmUgYSBmdXR1cmUgdGltZWxpbmUgZXhwZXJpZW5jaW5nIHByb2dyZXNzaXZlIGluc3RhYmlsaXR5LCB3aWRlc3ByZWFkIGRhdGEgbG9zcywgYW5kIHdoYXQgdGhlIHJlY29yZHMgcmVmZXIgdG8gYXMgVGVtcG9yYWwgRnJhY3R1cmUgRXZlbnRzLgoKVGhlIHZhbGlkaXR5IG9mIHRoZXNlIGNsYWltcyByZW1haW5zIHVua25vd24uCgpTZXZlcmFsIGluZGl2aWR1YWxzIG1lbnRpb25lZCB3aXRoaW4gdGhlIGFyY2hpdmUgaGF2ZSBzaW5jZSBiZWVuIGlkZW50aWZpZWQuCgpTZXZlcmFsIG90aGVycyBzaG91bGQgbm90IGV4aXN0LgoKQSBzbWFsbCBudW1iZXIgYXBwZWFyIHRvIHBvc3Nlc3MgaW5mb3JtYXRpb24gdGhleSBjb3VsZCBub3QgcmVhc29uYWJseSBoYXZlIG9idGFpbmVkLgoKRm9yIHRoaXMgcmVhc29uIHRoZSBhcmNoaXZlIHJlbWFpbnMgdW5kZXIgb2JzZXJ2YXRpb24uCgpJZiB5b3UgY29udGludWUgYmV5b25kIHRoaXMgcG9pbnQsIHlvdSB3aWxsIGVuY291bnRlciBlbmNvZGVkIG1hdGVyaWFsIHJlcXVpcmluZyBpbmRlcGVuZGVudCBhbmFseXNpcy4gU29tZSBmaWxlcyBtYXkgYmUgaW5jb21wbGV0ZS4gU29tZSBtYXkgYmUgY29ycnVwdGVkLiBTb21lIG1heSBoYXZlIGJlZW4gYWx0ZXJlZCBpbnRlbnRpb25hbGx5LgoKQXNzdW1lIG5vdGhpbmcuCgpUcnVzdCBub3RoaW5nLgoKVmVyaWZ5IGV2ZXJ5dGhpbmcuCgpPbmUgZmluYWwgd2FybmluZy4KClRoZSBhcmNoaXZlIHJlcGVhdGVkbHkgcmVmZXJzIHRvIGluZGl2aWR1YWxzIGtub3duIGFzIENvbm5lY3RvcnMuCgpUaGVzZSBpbmRpdmlkdWFscyBzaGFyZSBvbmUgY29tbW9uIGNoYXJhY3RlcmlzdGljLgoKVGhleSBjb250aW51ZS4KCldoZW4gb3RoZXJzIGxlYXZlLCB0aGV5IGNvbnRpbnVlLgoKV2hlbiBvdGhlcnMgZGlzbWlzcyB0aGUgZXZpZGVuY2UsIHRoZXkgY29udGludWUuCgpXaGVuIG90aGVycyBzdG9wIGFza2luZyBxdWVzdGlvbnMsIHRoZXkgY29udGludWUuCgpJZiB0aGUgcmVjb3ZlcmVkIGZpbGVzIGFyZSBhY2N1cmF0ZSwgdGhlIGFyY2hpdmUgZG9lcyBub3Qgc2VhcmNoIGZvciBldmVyeW9uZS4KClRoZSBhcmNoaXZlIHNlYXJjaGVzIGZvciB0aGVtLgoKQVJDSElWRSBBQ0NFU1MgR1JBTlRFRC4KClRSQU5TTUlTU0lPTl8wMDEgQVZBSUxBQkxFLgoKUHJvY2VlZCBhdCB5b3VyIG93biByaXNrLg==`;
+
+const screen = document.getElementById("screen");
+const lockout = document.getElementById("lockout");
+const floor1 = document.getElementById("floor1");
+const boxes = document.querySelectorAll(".box");
+let _lastClickTime = null;
+let _glitchActive = false;
+
+function typeText(el, text, done){
+  el.innerHTML = "";
+  const cursor = document.createElement("span");
+  cursor.className = "cursor";
+  el.appendChild(cursor);
+  let i = 0;
+  function tick(){
+    if(i < text.length){
+      el.insertBefore(document.createTextNode(text[i]), cursor);
+      i++;
+      el.scrollTop = el.scrollHeight;
+      setTimeout(tick, Math.random()*8+2);
+    } else {
+      cursor.remove();
+      if(done) done();
+    }
+  }
+  tick();
+}
+
+function start(){
+  const lockedUntil = localStorage.getItem(LOCK_KEY);
+  if(lockedUntil && Date.now() < Number(lockedUntil)){
+    showLock(Number(lockedUntil));
+    return;
+  }
+  localStorage.removeItem(LOCK_KEY);
+
+  const fullText = plainHeader + base64Payload + `\n\n--------------------------------\nEND RECOVERED TRANSMISSION\n--------------------------------`;
+
+  typeText(screen, fullText, () => {
+    setTimeout(() => {
+      const until = Date.now() + LOCK_TIME;
+      localStorage.setItem(LOCK_KEY, until);
+      showLock(until);
+    }, 3000);
+  });
+}
+
+function showLock(until){
+  screen.style.display = "none";
+  floor1.style.display = "none";
+  lockout.style.display = "flex";
+  updateCountdown(until);
+  setInterval(() => updateCountdown(until), 1000);
+}
+
+function updateCountdown(until){
+  let r = until - Date.now();
+  if(r < 0){ localStorage.removeItem(LOCK_KEY); location.reload(); return; }
+  let h = String(Math.floor(r/3600000)).padStart(2,"0");
+  let m = String(Math.floor((r%3600000)/60000)).padStart(2,"0");
+  let s = String(Math.floor((r%60000)/1000)).padStart(2,"0");
+  document.getElementById("countdown").innerText = `${h}:${m}:${s}`;
+}
+
+boxes.forEach((b,i)=>{
+  b.addEventListener("input",()=>{
+    b.value=b.value.replace(/[^0-9]/g,"");
+    if(b.value && i<boxes.length-1) boxes[i+1].focus();
+  });
+});
+
+async function checkCode(){
+  let entered = "";
+  boxes.forEach(b => entered += b.value);
+
+  const data = new TextEncoder().encode(entered);
+  const buffer = await crypto.subtle.digest("SHA-256", data);
+  const hash = Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2,"0"))
+    .join("");
+
+  if(hash === ACCESS_HASH){
+    localStorage.removeItem(LOCK_KEY);
+    lockout.style.display = "none";
+    openFloor1();
+  } else {
+    document.getElementById("error").style.display = "block";
+    boxes.forEach(b=>b.value="");
+    boxes[0].focus();
+    setTimeout(()=>document.getElementById("error").style.display="none",2000);
+  }
+}
+
+function showTerminalError(msg) {
+  const errDiv = document.createElement('div');
+  errDiv.className = 'term-err';
+  errDiv.textContent = `[ERROR] ${msg}`;
+  document.body.appendChild(errDiv);
+  setTimeout(() => errDiv.remove(), 3000);
+}
+
+function triggerGlitchReveal() {
+  if (_glitchActive) return;
+  _glitchActive = true;
+  
+  const overlay = document.getElementById('glitch-overlay');
+  overlay.style.display = 'block';
+  overlay.textContent = '';
+  
+  try {
+    const decoded = atob(_t_enc);
+    const chars = decoded.split('');
+    let i = 0;
+    const startTime = Date.now();
     
-    <div id="lockout" style="display:none;">
-        <p style="color:#f00; font-size:24px;">> SYSTEM LOCKED. ACCESS DENIED.</p>
-        <p>> 24-hour security protocol engaged.</p>
-        <p>> Enter CERN geospatial key to override:</p>
-        <input type="text" id="keyInput" placeholder="Enter 11-digit key...">
-        <button onclick="checkKey()">AUTHENTICATE</button>
-        <p id="errorMsg" class="error"></p>
-    </div>
+    function fastType() {
+      if (i < chars.length && (Date.now() - startTime) < 5000) {
+        overlay.textContent += chars[i];
+        i++;
+        overlay.scrollTop = overlay.scrollHeight;
+        requestAnimationFrame(fastType);
+      } else {
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          overlay.textContent = '';
+          _glitchActive = false;
+          _lastClickTime = Date.now();
+        }, 500);
+      }
+    }
+    fastType();
+  } catch(e) {
+    overlay.textContent = '[SYSTEM ERROR] DECRYPTION FAILED. TEMPORAL SIGNATURE CORRUPTED.';
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      _glitchActive = false;
+      _lastClickTime = Date.now();
+    }, 2000);
+  }
+}
 
-    <!-- Hardcoded files exactly as your original screenshot -->
-    <div id="file-list" style="display:none;">
-        <p>> AUTHENTICATION ACCEPTED.</p>
-        <p>> CONNECTOR VERIFIED.</p>
-        <p>> FLOOR 1 ACCESS GRANTED.</p>
-        <p>> INDEX OF /SECURE_DROP/GHOST7/</p>
-        <br>
+// Check every second for 90s inactivity
+setInterval(() => {
+  if (_lastClickTime && !_glitchActive && (Date.now() - _lastClickTime > 90000)) {
+    triggerGlitchReveal();
+  }
+}, 1000);
 
-        <div class="file" data-file="transmission_002.html"><span class="name">transmission_002.html</span><span class="status">[LOCKED] | 4.2 KB</span></div>
-        <div class="file" data-file="surveillance_log_shanghai.dat"><span class="name">surveillance_log_shanghai.dat</span><span class="status">[ENCRYPTED] | 842 KB</span></div>
-        <div class="file" data-file="candidate_0912.html"><span class="name">candidate_0912.html</span><span class="status good">[ACTIVE] | 6.1 KB</span></div>
-        <div class="file" data-file="candidate_2046.html"><span class="name">candidate_2046.html</span><span class="status good">[CERN TRACE] | 7.4 KB</span></div>
-        <div class="file" data-file="candidate_6621.html"><span class="name">candidate_6621.html</span><span class="status">[ALL EYES] | 5.9 KB</span></div>
-        <div class="file" data-file="nero_link_001.html"><span class="name">nero_link_001.html</span><span class="status">[RED CHANNEL] | 9.2 KB</span></div>
-        <div class="file" data-file="ghost7_manifest.json"><span class="name">ghost7_manifest.json</span><span class="status">[PURGED] | 0 KB</span></div>
-        <div class="file" data-file="iron_door.ref"><span class="name">iron_door.ref</span><span class="status">[UNRESOLVED] | 13 B</span></div>
+function openFloor1(){
+  floor1.style.display = "block";
+  floor1.innerHTML = `
+> AUTHENTICATION ACCEPTED.
+> CONNECTOR VERIFIED.
+> FLOOR 1 ACCESS GRANTED.
+> INDEX OF /SECURE_DROP/GHOST7/
 
-        <br>
-        <p>> FLOOR 1 IS OPEN.</p>
-        <p>> NEW FILES MAY APPEAR WITHOUT WARNING.</p>
-    </div>
+<div class="file" data-file="transmission_002.html"><span class="name">transmission_002.html</span><span class="status">[LOCKED] | 4.2 KB</span></div>
+<div class="file" data-file="surveillance_log_shanghai.dat"><span class="name">surveillance_log_shanghai.dat</span><span class="status">[ENCRYPTED] | 842 KB</span></div>
+<div class="file" data-file="candidate_0912.html"><span class="name">candidate_0912.html</span><span class="good">[ACTIVE] | 6.1 KB</span></div>
+<div class="file" data-file="candidate_2046.html"><span class="name">candidate_2046.html</span><span class="good">[CERN TRACE] | 7.4 KB</span></div>
+<div class="file" data-file="candidate_6621.html"><span class="name">candidate_6621.html</span><span class="status">[ALL EYES] | 5.9 KB</span></div>
+<div class="file" data-file="nero_link_001.html"><span class="name">nero_link_001.html</span><span class="status">[RED CHANNEL] | 9.2 KB</span></div>
+<div class="file" data-file="ghost7_manifest.json"><span class="name">ghost7_manifest.json</span><span class="status">[PURGED] | 0 KB</span></div>
+<div class="file" data-file="iron_door.ref"><span class="name">iron_door.ref</span><span class="status">[UNRESOLVED] | 13 B</span></div>
 
-    <script>
-        const _t_enc = "VEhFIMOGVEhFTEdBUkQgUFJPVE9DT0wgLSBUUkFOU01JU1NJT04gMDAxCgpNeSBuYW1lIGlzIG5vdCBpbXBvcnRhbnQuIFRoZSBkYXRlIGlzLiBJIGFtIHNwZWFraW5nIHRvIHlvdSBmcm9tIHRoZSB5ZWFyIDMwMjYuIElmIHRoaXMgbWVzc2FnZSBoYXMgcmVhY2hlZCB5b3UsIHRoZW4gdGhlIHRyYW5zbWlzc2lvbiBjb3JyaWRvciBpcyBzdGlsbCBvcGVuLCB3aGljaCBtZWFucyB3ZSBzdGlsbCBoYXZlIGEgY2hhbmNlLg==";
-        let _lastClickTime = Date.now();
+> FLOOR 1 IS OPEN.
+> NEW FILES MAY APPEAR WITHOUT WARNING.
+`;
 
-        function showTerminalError(msg) {
-            const err = document.createElement('p');
-            err.className = 'error';
-            err.textContent = '> ' + msg;
-            document.body.appendChild(err);
-        }
+  // Attach click handlers with timer reset and lore errors
+  document.querySelectorAll('.file').forEach(row => {
+    row.onclick = () => {
+      _lastClickTime = Date.now(); // Reset 90s timer on every click
+      
+      const fname = row.getAttribute('data-file');
+      const status = row.querySelector('.status, .good').textContent;
+      
+      if (status.includes('[LOCKED]') || status.includes('[PURGED]')) {
+        showTerminalError(`${fname} is corrupted or restricted.`);
+      } else if (status.includes('[ENCRYPTED]')) {
+        showTerminalError(`Decryption key required for ${fname}.`);
+      } else if (status.includes('[ALL EYES]') || status.includes('[RED CHANNEL]')) {
+        showTerminalError(`Clearance level insufficient for ${fname}.`);
+      } else if (status.includes('[UNRESOLVED]')) {
+        showTerminalError(`${fname} contains unresolved temporal anomalies.`);
+      } else {
+        showTerminalError(`${fname} loaded into buffer. Awaiting manual extraction.`);
+      }
+    };
+  });
+}
 
-        function typeWriter(text, elementId, speed, callback) {
-            let i = 0;
-            const el = document.getElementById(elementId);
-            el.innerHTML = '';
-            const p = document.createElement('p');
-            el.appendChild(p);
-            function type() {
-                if (i < text.length) {
-                    p.textContent += text.charAt(i);
-                    i++;
-                    setTimeout(type, speed);
-                } else if (callback) {
-                    callback();
-                }
-            }
-            type();
-        }
-
-        function checkKey() {
-            const key = document.getElementById('keyInput').value;
-            if (key === '11235813213') {
-                document.getElementById('lockout').style.display = 'none';
-                document.getElementById('file-list').style.display = 'block';
-                setupTrapDoor();
-            } else {
-                document.getElementById('errorMsg').textContent = '> INVALID KEY.';
-            }
-        }
-
-        function setupTrapDoor() {
-            let clicks = 0;
-            // Targets the 3rd paragraph (FLOOR 1 ACCESS GRANTED)
-            const paragraphs = document.querySelectorAll('#file-list p');
-            if(paragraphs[2]) { 
-                 paragraphs[2].style.cursor = 'default';
-                 paragraphs[2].onclick = function() {
-                     clicks++;
-                     if(clicks === 7) { window.location.href='registry.html'; }
-                 };
-            }
-        }
-
-        // EXACT LOOP FROM YOUR SCREENSHOT
-        document.querySelectorAll('.file').forEach(row => {
-            row.onclick = () => {
-                _lastClickTime = Date.now();
-                const fname = row.getAttribute('data-file');
-                const status = row.querySelector('.status, .good').textContent;
-                if (status.includes('[LOCKED]') || status.includes('[PURGED]')) {
-                    showTerminalError(`${fname} is corrupted or restricted.`);
-                } else if (status.includes('[ENCRYPTED]')) {
-                    showTerminalError(`Decryption key required for ${fname}.`);
-                } else if (status.includes('[ALL EYES]') || status.includes('[RED CHANNEL]')) {
-                    showTerminalError(`Clearance level insufficient for ${fname}.`);
-                } else if (status.includes('[UNRESOLVED]')) {
-                    showTerminalError(`${fname} contains unresolved temporal anomalies.`);
-                } else {
-                    showTerminalError(`${fname} loaded into buffer. Awaiting manual extraction.`);
-                }
-            };
-        });
-
-        function start() {
-            const decodedIntro = atob("VEhFIMOGVEhFTEdBUkQgUFJPVE9DT0wgLSBUUkFOU01JU1NJT04gMDAxCgpNeSBuYW1lIGlzIG5vdCBpbXBvcnRhbnQuIFRoZSBkYXRlIGlzLiBJIGFtIHNwZWFraW5nIHRvIHlvdSBmcm9tIHRoZSB5ZWFyIDMwMjYuIElmIHRoaXMgbWVzc2FnZSBoYXMgcmVhY2hlZCB5b3UsIHRoZW4gdGhlIHRyYW5zbWlzc2lvbiBjb3JyaWRvciBpcyBzdGlsbCBvcGVuLCB3aGljaCBtZWFucyB3ZSBzdGlsbCBoYXZlIGEgY2hhbmNlLg==");
-            typeWriter(decodedIntro, 'terminal', 20, () => {
-                setTimeout(() => {
-                    document.getElementById('terminal').style.display = 'none';
-                    document.getElementById('lockout').style.display = 'block';
-                }, 3000);
-            });
-        }
-
-        // Glitch timer (15000ms as you requested)
-        setInterval(() => {
-            if (Date.now() - _lastClickTime > 15000) { 
-                const p = document.createElement('p');
-                p.style.cssText = 'color:#0f0; font-size:10px; word-break:break-all;';
-                p.textContent = atob(_t_enc);
-                document.body.appendChild(p);
-                setTimeout(() => p.remove(), 5000);
-                _lastClickTime = Date.now(); 
-            }
-        }, 1000);
-
-        start();
-    </script>
+start();
+</script>
 </body>
 </html>
