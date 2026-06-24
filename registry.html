@@ -146,20 +146,15 @@ What walks through them may not be what you sent.
 VERIFY EVERYTHING. TRUST NOTHING.
 THE ARCHIVE IS WATCHING.`;
 
-// Render content immediately with white header styling
-content.innerHTML = `<div class="white-header">ALL CONNECTORS MUST READ</div>` + 
-                    registryText.replace(/ALL CONNECTORS MUST READ\n\n/g, '');
+// Split text at the exact log entry point to inject real HTML
+const logEntry = '[ACTIVE] 2020-06-17_02:14 | Connector 6621 | Office Time Zone | Initial Deployment';
+const parts = registryText.split(logEntry);
 
-// Make field log links clickable after rendering
-setTimeout(() => {
-    const el = document.getElementById('content');
-    if (el) {
-        el.innerHTML = el.innerHTML.replace(
-            '[ACTIVE] 2020-06-17_02:14 | Connector 6621 | Office Time Zone | Initial Deployment',
-            '<a class="log-link" href="log_6621_001.html">[ACTIVE] 2020-06-17_02:14 | Connector 6621 | Office Time Zone | Initial Deployment</a>'
-        );
-    }
-}, 100);
+// Render with actual clickable anchor tag
+content.innerHTML = `<div class="white-header">ALL CONNECTORS MUST READ</div>` + 
+                    parts[0].replace(/ALL CONNECTORS MUST READ\n\n/g, '') +
+                    '<a class="log-link" href="log_6621_001.html">' + logEntry + '</a>' +
+                    parts[1];
 </script>
 </body>
 </html>
