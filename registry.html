@@ -70,8 +70,12 @@ Probably for the best.
 
 —6621`
     }
-    // TO ADD A NEW LOG, COPY THE BLOCK ABOVE AND PASTE BELOW THIS LINE
 ];
+
+// BUILD LOG LIST STRING DYNAMICALLY
+const logListHTML = fieldLogs.map(log => 
+    `<a class="log-link" onclick="openLog('${log.id}')">[${log.status}] ${log.date} | Connector ${log.connector} | ${log.zone} | ${log.type}</a>`
+).join('\n');
 
 const registryText = `ALL CONNECTORS MUST READ
 
@@ -172,7 +176,7 @@ ARCHIVE ACCESS LEVELS
 FIELD LOG ARCHIVE
 ================================
 
-${fieldLogs.map(log => `[${log.status}] ${log.date} | Connector ${log.connector} | ${log.zone} | ${log.type}`).join('\n')}
+${logListHTML}
 [LOCKED] 2020-06-18_14:30 | Connector 6621 | Market District | Surveillance Log
 [PURGED] 2020-06-19_09:00 | Connector 6621 | [REDACTED] | [REDACTED]
 
@@ -191,20 +195,6 @@ THE ARCHIVE IS WATCHING.`;
 content.innerHTML = `<div class="white-header">ALL CONNECTORS MUST READ</div>` + 
                     registryText.replace(/ALL CONNECTORS MUST READ\n\n/g, '');
 
-// Make log entries clickable
-setTimeout(() => {
-    fieldLogs.forEach(log => {
-        const linkText = `[${log.status}] ${log.date} | Connector ${log.connector} | ${log.zone} | ${log.type}`;
-        const el = document.getElementById('content');
-        if (el) {
-            el.innerHTML = el.innerHTML.replace(
-                linkText,
-                `<a class="log-link" onclick="openLog('${log.id}')">${linkText}</a>`
-            );
-        }
-    });
-}, 100);
-
 function openLog(id) {
     const log = fieldLogs.find(l => l.id === id);
     if (log) {
@@ -216,3 +206,6 @@ function openLog(id) {
 function closeModal() {
     modal.style.display = "none";
 }
+</script>
+</body>
+</html>
