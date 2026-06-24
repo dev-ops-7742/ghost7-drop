@@ -173,7 +173,7 @@ function triggerGlitchReveal() {
     const startTime = Date.now();
     
     function fastType() {
-      if (i < chars.length && (Date.now() - startTime) < 5000) {
+      if (i < chars.length && (Date.now() - startTime) < 15000) {
         overlay.textContent += chars[i];
         i++;
         overlay.scrollTop = overlay.scrollHeight;
