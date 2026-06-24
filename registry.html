@@ -6,85 +6,31 @@
 <style>
 body{margin:0;background:#000;color:#0f0;font-family:Courier New,monospace;font-size:15px;overflow:hidden;height:100vh;display:flex;justify-content:center;align-items:center}
 .scanlines{position:fixed;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,.35) 50%);background-size:100% 4px;pointer-events:none;z-index:10}
-#screen,#floor1{width:90%;max-width:900px;height:82vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;text-shadow:0 0 6px #0f0;scrollbar-width:none}
-#screen::-webkit-scrollbar,#floor1::-webkit-scrollbar{display:none}
-.cursor{display:inline-block;width:10px;height:18px;background:#0f0;animation:blink .8s infinite}
-@keyframes blink{50%{opacity:0}}
-#lockout{display:none;position:fixed;inset:0;background:#000;z-index:20;flex-direction:column;justify-content:center;align-items:center;text-align:center}
-#lockout h1{color:#fff;text-shadow:0 0 12px white;font-size:30px}
-#countdown{color:#f33;font-size:48px;letter-spacing:5px;text-shadow:0 0 14px red;margin:25px}
-.box{width:34px;height:44px;margin:4px;background:#111;border:1px solid #f33;color:#f33;font-size:22px;text-align:center;font-family:Courier New}
-.box:focus{outline:none;border-color:white;color:white}
-button{margin-top:20px;background:#f33;color:#000;border:0;padding:10px 35px;font-weight:bold;font-family:Courier New;cursor:pointer}
-#error{display:none;color:#f33;margin-top:15px}
-.white-header{color:#fff;text-shadow:0 0 8px white;font-size:24px;font-weight:bold;margin-bottom:20px;text-align:center}
+#content{width:90%;max-width:900px;height:82vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;text-shadow:0 0 6px #0f0;scrollbar-width:none;padding-top:20px}
+#content::-webkit-scrollbar{display:none}
+.white-header{color:#fff;text-shadow:0 0 8px white;font-size:24px;font-weight:bold;margin-bottom:20px;text-align:center;line-height:1.4}
 .red-warning{color:#f33;text-shadow:0 0 6px red}
 .section{border-left:2px solid #0f0;padding-left:15px;margin:20px 0}
-.status-active{color:#0f0}
-.status-locked{color:#f33}
 .blink{animation:blink 1s infinite}
+@keyframes blink{50%{opacity:0}}
 </style>
 </head>
 
 <body>
 <div class="scanlines"></div>
-<div id="screen"></div>
-
-<div id="lockout">
-<h1> CONNECTOR VERIFICATION REQUIRED ⚠</h1>
-<p>UNAUTHORIZED ACCESS TO REGISTRY DETECTED.</p>
-<p>ENTER YOUR 11-DIGIT CONNECTOR ID TO PROCEED.</p>
-<div id="countdown">--:--:--</div>
-<div id="grid">
-<input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1">
-</div>
-<p style="color:#555;font-size:12px">// REFERENCE: TEMPORAL OPERATIONS DIVISION //</p>
-<button onclick="checkCode()">AUTHENTICATE</button>
-<p id="error">INVALID CONNECTOR ID. TEMPORAL AUDIT INITIATED.</p>
-</div>
-
-<div id="floor1" style="display:none"></div>
+<div id="content"></div>
 
 <script>
-const ACCESS_HASH = "8d03385d8d19e08cc3e3681d5611b6dc7bf0a42de4a063a68a5a582beac46ebb";
-const LOCK_KEY = "registry_lock_v1";
-const LOCK_TIME = 24*60*60*1000;
+const content = document.getElementById("content");
 
-const screen = document.getElementById("screen");
-const lockout = document.getElementById("lockout");
-const floor1 = document.getElementById("floor1");
-const boxes = document.querySelectorAll(".box");
-let _lastClickTime = null;
-
-function typeText(el, text, done){
-  el.innerHTML = "";
-  const cursor = document.createElement("span");
-  cursor.className = "cursor";
-  el.appendChild(cursor);
-  let i = 0;
-  function tick(){
-    if(i < text.length){
-      el.insertBefore(document.createTextNode(text[i]), cursor);
-      i++;
-      el.scrollTop = el.scrollHeight;
-      setTimeout(tick, Math.random()*8+2);
-    } else {
-      cursor.remove();
-      if(done) done();
+// Debug reset key combo for testing
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        location.reload();
     }
-  }
-  tick();
-}
+});
 
-function start(){
-  const lockedUntil = localStorage.getItem(LOCK_KEY);
-  if(lockedUntil && Date.now() < Number(lockedUntil)){
-    showLock(Number(lockedUntil));
-    return;
-  }
-  localStorage.removeItem(LOCK_KEY);
-
-  const fullText = `ALL CONNECTORS MUST READ
+const registryText = `ALL CONNECTORS MUST READ
 
 ================================
 OPERATIONAL DIRECTIVE 7-ALPHA
@@ -132,7 +78,7 @@ STATUS:           ACTIVE / UNCONTAINED
 LAST KNOWN LOC:   [REDACTED]
 
 DIRECTIVE: Elias Voss is the #1 priority target for all active connectors. 
-He possesses unauthorized knowledge of the Æthelgard Protocol and has been 
+He possesses unauthorized knowledge of the thelgard Protocol and has been 
 observed manipulating temporal fractures. Do NOT engage directly. Report 
 all sightings immediately via secure line 07593881143.
 
@@ -190,75 +136,9 @@ What walks through them may not be what you sent.
 VERIFY EVERYTHING. TRUST NOTHING.
 THE ARCHIVE IS WATCHING.`;
 
-  typeText(screen, fullText, () => {
-    setTimeout(() => {
-      const until = Date.now() + LOCK_TIME;
-      localStorage.setItem(LOCK_KEY, until);
-      showLock(until);
-    }, 3000);
-  });
-}
-
-function showLock(until){
-  screen.style.display = "none";
-  floor1.style.display = "none";
-  lockout.style.display = "flex";
-  updateCountdown(until);
-  setInterval(() => updateCountdown(until), 1000);
-}
-
-function updateCountdown(until){
-  let r = until - Date.now();
-  if(r < 0){ localStorage.removeItem(LOCK_KEY); location.reload(); return; }
-  let h = String(Math.floor(r/3600000)).padStart(2,"0");
-  let m = String(Math.floor((r%3600000)/60000)).padStart(2,"0");
-  let s = String(Math.floor((r%60000)/1000)).padStart(2,"0");
-  document.getElementById("countdown").innerText = `${h}:${m}:${s}`;
-}
-
-boxes.forEach((b,i)=>{
-  b.addEventListener("input",()=>{
-    b.value=b.value.replace(/[^0-9]/g,"");
-    if(b.value && i<boxes.length-1) boxes[i+1].focus();
-  });
-});
-
-async function checkCode(){
-  let entered = "";
-  boxes.forEach(b => entered += b.value);
-
-  const data = new TextEncoder().encode(entered);
-  const buffer = await crypto.subtle.digest("SHA-256", data);
-  const hash = Array.from(new Uint8Array(buffer))
-    .map(b => b.toString(16).padStart(2,"0"))
-    .join("");
-
-  if(hash === ACCESS_HASH){
-    localStorage.removeItem(LOCK_KEY);
-    lockout.style.display = "none";
-    openFloor1();
-  } else {
-    document.getElementById("error").style.display = "block";
-    boxes.forEach(b=>b.value="");
-    boxes[0].focus();
-    setTimeout(()=>document.getElementById("error").style.display="none",2000);
-  }
-}
-
-function openFloor1(){
-  floor1.style.display = "block";
-  floor1.innerHTML = `<div class="white-header">ALL CONNECTORS MUST READ</div>` + screen.innerHTML.replace(/ALL CONNECTORS MUST READ\n\n/g, '');
-}
-
-// Debug reset key combo
-document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
-        localStorage.removeItem(LOCK_KEY);
-        location.reload();
-    }
-});
-
-start();
+// Render content immediately with white header styling
+content.innerHTML = `<div class="white-header">ALL CONNECTORS MUST READ</div>` + 
+                    registryText.replace(/ALL CONNECTORS MUST READ\n\n/g, '');
 </script>
 </body>
 </html>
