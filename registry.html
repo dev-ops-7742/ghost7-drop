@@ -1,1 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>THE AETHELGARD REGISTRY // CONNECTOR ACCESS</title>
+<style>
+body{margin:0;background:#000;color:#0f0;font-family:Courier New,monospace;font-size:15px;overflow:hidden;height:100vh;display:flex;justify-content:center;align-items:center}
+.scanlines{position:fixed;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,.35) 50%);background-size:100% 4px;pointer-events:none;z-index:10}
+#screen,#floor1{width:90%;max-width:900px;height:82vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;text-shadow:0 0 6px #0f0;scrollbar-width:none}
+#screen::-webkit-scrollbar,#floor1::-webkit-scrollbar{display:none}
+.cursor{display:inline-block;width:10px;height:18px;background:#0f0;animation:blink .8s infinite}
+@keyframes blink{50%{opacity:0}}
+#lockout{display:none;position:fixed;inset:0;background:#000;z-index:20;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+#lockout h1{color:#fff;text-shadow:0 0 12px white;font-size:30px}
+#countdown{color:#f33;font-size:48px;letter-spacing:5px;text-shadow:0 0 14px red;margin:25px}
+.box{width:34px;height:44px;margin:4px;background:#111;border:1px solid #f33;color:#f33;font-size:22px;text-align:center;font-family:Courier New}
+.box:focus{outline:none;border-color:white;color:white}
+button{margin-top:20px;background:#f33;color:#000;border:0;padding:10px 35px;font-weight:bold;font-family:Courier New;cursor:pointer}
+#error{display:none;color:#f33;margin-top:15px}
+.white-header{color:#fff;text-shadow:0 0 8px white;font-size:24px;font-weight:bold;margin-bottom:20px;text-align:center}
+.red-warning{color:#f33;text-shadow:0 0 6px red}
+.section{border-left:2px solid #0f0;padding-left:15px;margin:20px 0}
+.status-active{color:#0f0}
+.status-locked{color:#f33}
+.blink{animation:blink 1s infinite}
+</style>
+</head>
 
+<body>
+<div class="scanlines"></div>
+<div id="screen"></div>
+
+<div id="lockout">
+<h1> CONNECTOR VERIFICATION REQUIRED ⚠</h1>
+<p>UNAUTHORIZED ACCESS TO REGISTRY DETECTED.</p>
+<p>ENTER YOUR 11-DIGIT CONNECTOR ID TO PROCEED.</p>
+<div id="countdown">--:--:--</div>
+<div id="grid">
+<input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1">
+</div>
+<p style="color:#555;font-size:12px">// REFERENCE: TEMPORAL OPERATIONS DIVISION //</p>
+<button onclick="checkCode()">AUTHENTICATE</button>
+<p id="error">INVALID CONNECTOR ID. TEMPORAL AUDIT INITIATED.</p>
+</div>
+
+<div id="floor1" style="display:none"></div>
+
+<script>
+const ACCESS_HASH = "8d03385d8d19e08cc3e3681d5611b6dc7bf0a42de4a063a68a5a582beac46ebb";
+const LOCK_KEY = "registry_lock_v1";
+const LOCK_TIME = 24*60*60*1000;
+
+const screen = document.getElementById("screen");
+const lockout = document.getElementById("lockout");
+const floor1 = document.getElementById("floor1");
+const boxes = document.querySelectorAll(".box");
+let _lastClickTime = null;
+
+function typeText(el, text, done){
+  el.innerHTML = "";
+  const cursor = document.createElement("span");
+  cursor.className = "cursor";
+  el.appendChild(cursor);
+  let i = 0;
+  function tick(){
+    if(i < text.length){
+      el.insertBefore(document.createTextNode(text[i]), cursor);
+      i++;
+      el.scrollTop = el.scrollHeight;
+      setTimeout(tick, Math.random()*8+2);
+    } else {
+      cursor.remove();
+      if(done) done();
+    }
+  }
+  tick();
+}
+
+function start(){
+  const lockedUntil = localStorage.getItem(LOCK_KEY);
+  if(lockedUntil && Date.now() < Number(lockedUntil)){
+    showLock(Number(lockedUntil));
+    return;
+  }
+  localStorage.removeItem(LOCK_KEY);
+
+  const fullText = `ALL CONNECTORS MUST READ
+
+================================
+OPERATIONAL DIRECTIVE 7-ALPHA
+================================
+
+TEMPORAL DEPLOYMENT PROTOCOLS
+
+• AUTHORIZED PERSONNEL ONLY: Connectors may initiate temporal displacement 
+  to silence high-value targets or extract rogue staff. All deployments 
+  require dual-key verification and temporal anchor confirmation.
+
+• TARGET PRIORITY MATRIX: Only subjects classified as ROGUE (Class-Ω) or 
+  HIGH-INTEREST (Class-Δ) may be engaged. Civilian interference results in 
+  immediate connector termination and timeline purge.
+
+• TEMPORAL WINDOW RESTRICTIONS: Connector 6621 is the designated field 
+  operative for periods 2017–present. Pre-2017 operations are forbidden 
+  due to unresolved causal loops in that era. Requests outside this window 
+  will be flagged as paradox risks.
+
+• SILENCING PROTOCOL: Targets must be neutralized using non-temporal methods 
+  whenever possible. Temporal erasure is a last resort and requires Council 
+  approval. Unauthorized erasures will be investigated as rogue activity.
+
+================================
+CONNECTOR 6621 FIELD OPERATIVE
+================================
+
+DESIGNATION:      Field Operative / Temporal Enforcement
+ACTIVE WINDOW:    2017 – Present (or until relocation to past/future fracture)
+CURRENT STATUS:   [AWAITING DEPLOYMENT ORDERS]
+CONTACT METHOD:   Encrypted burst transmission only
+SECURE LINE:      +44 7593 881 143
+
+NOTE: Connector 6621 can ONLY be contacted for time periods 2017 onwards.
+Pre-2017 requests will be ignored due to temporal interference risk.
+Do not attempt contact outside designated windows.
+
+================================
+PRIORITY TARGET: ELIAS VOSS
+================================
+
+CLASSIFICATION:   Class-Ω ROGUE / TEMPORAL ANOMALY
+STATUS:           ACTIVE / UNCONTAINED
+LAST KNOWN LOC:   [REDACTED]
+
+DIRECTIVE: Elias Voss is the #1 priority target for all active connectors. 
+He possesses unauthorized knowledge of the Æthelgard Protocol and has been 
+observed manipulating temporal fractures. Do NOT engage directly. Report 
+all sightings immediately via secure line 07593881143.
+
+WARNING: Voss exhibits signs of advanced temporal drift. He may appear 
+younger/older than recorded. Trust no visual identification without 
+hash verification.
+
+================================
+ROGUE STAFF IDENTIFICATION
+================================
+
+• PHOTOGRAPHIC EVIDENCE: Only images of confirmed rogue connectors or 
+  Class-Δ targets may be uploaded. Active connector photos are strictly 
+  prohibited. Violations result in immediate access revocation.
+
+• VERIFICATION HASH REQUIRED: All submissions must include SHA-256 hash 
+  of source file + temporal coordinates of capture. Unverified uploads 
+  are auto-purged within 60 seconds.
+
+• REPORT SUSPICIOUS ACTIVITY: If you observe a connector acting outside 
+  their assigned temporal window, exhibiting memory drift, or referencing 
+  events that haven't occurred yet, report immediately via encrypted 
+  channel Δ-9. Do not confront directly.
+
+================================
+TEMPORAL SAFETY WARNINGS
+================================
+
+⚠ WARNING: TEMPORAL DISPLACEMENT CARRIES RISK OF CAUSAL FRACTURE.
+⚠ WARNING: CONTACT WITH YOUR PAST/FUTURE SELF RESULTS IN NEURAL COLLAPSE.
+⚠ WARNING: UNAUTHORIZED TIMELINE ALTERATION IS PUNISHABLE BY ERASURE.
+⚠ WARNING: IF YOU BEGIN REMEMBERING EVENTS THAT NEVER HAPPENED, CEASE 
+           ALL OPERATIONS AND INITIATE CONTAINMENT PROTOCOL Σ.
+
+================================
+ARCHIVE ACCESS LEVELS
+================================
+
+[ACTIVE]        Cleared for all connectors
+[CERN TRACE]    Requires Level-3 clearance + temporal anchor verification
+[ALL EYES]      Council-only access. Unauthorized viewing triggers lockdown
+[RED CHANNEL]   Emergency broadcast. Ignore unless direct alert received
+[LOCKED]        Sealed by temporal court order. Do not attempt decryption
+[PURGED]        Data destroyed due to paradox contamination
+[UNRESOLVED]    Contains conflicting timelines. Reading may cause dissonance
+
+================================
+FINAL NOTICE
+================================
+
+You were chosen because you refuse to look away.
+But remember: some doors open both ways.
+What walks through them may not be what you sent.
+
+VERIFY EVERYTHING. TRUST NOTHING.
+THE ARCHIVE IS WATCHING.`;
+
+  typeText(screen, fullText, () => {
+    setTimeout(() => {
+      const until = Date.now() + LOCK_TIME;
+      localStorage.setItem(LOCK_KEY, until);
+      showLock(until);
+    }, 3000);
+  });
+}
+
+function showLock(until){
+  screen.style.display = "none";
+  floor1.style.display = "none";
+  lockout.style.display = "flex";
+  updateCountdown(until);
+  setInterval(() => updateCountdown(until), 1000);
+}
+
+function updateCountdown(until){
+  let r = until - Date.now();
+  if(r < 0){ localStorage.removeItem(LOCK_KEY); location.reload(); return; }
+  let h = String(Math.floor(r/3600000)).padStart(2,"0");
+  let m = String(Math.floor((r%3600000)/60000)).padStart(2,"0");
+  let s = String(Math.floor((r%60000)/1000)).padStart(2,"0");
+  document.getElementById("countdown").innerText = `${h}:${m}:${s}`;
+}
+
+boxes.forEach((b,i)=>{
+  b.addEventListener("input",()=>{
+    b.value=b.value.replace(/[^0-9]/g,"");
+    if(b.value && i<boxes.length-1) boxes[i+1].focus();
+  });
+});
+
+async function checkCode(){
+  let entered = "";
+  boxes.forEach(b => entered += b.value);
+
+  const data = new TextEncoder().encode(entered);
+  const buffer = await crypto.subtle.digest("SHA-256", data);
+  const hash = Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2,"0"))
+    .join("");
+
+  if(hash === ACCESS_HASH){
+    localStorage.removeItem(LOCK_KEY);
+    lockout.style.display = "none";
+    openFloor1();
+  } else {
+    document.getElementById("error").style.display = "block";
+    boxes.forEach(b=>b.value="");
+    boxes[0].focus();
+    setTimeout(()=>document.getElementById("error").style.display="none",2000);
+  }
+}
+
+function openFloor1(){
+  floor1.style.display = "block";
+  floor1.innerHTML = `<div class="white-header">ALL CONNECTORS MUST READ</div>` + screen.innerHTML.replace(/ALL CONNECTORS MUST READ\n\n/g, '');
+}
+
+// Debug reset key combo
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        localStorage.removeItem(LOCK_KEY);
+        location.reload();
+    }
+});
+
+start();
+</script>
+</body>
+</html>
