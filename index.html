@@ -161,30 +161,25 @@ function showTerminalError(msg) {
 function triggerGlitchReveal() {
   if (_glitchActive) return;
   _glitchActive = true;
-  
+
   const overlay = document.getElementById('glitch-overlay');
   overlay.style.display = 'block';
   overlay.textContent = '';
-  
+
   try {
     const decoded = atob(_t_enc);
     const chars = decoded.split('');
     let i = 0;
-    const startTime = Date.now();
-    
+
     function fastType() {
-      if (i < chars.length && (Date.now() - startTime) < 5000) {
+      if (i < chars.length) {
         overlay.textContent += chars[i];
         i++;
         overlay.scrollTop = overlay.scrollHeight;
         requestAnimationFrame(fastType);
       } else {
-        setTimeout(() => {
-          overlay.style.display = 'none';
-          overlay.textContent = '';
-          _glitchActive = false;
-          _lastClickTime = Date.now();
-        }, 500);
+        _glitchActive = false;
+        _lastClickTime = Date.now();
       }
     }
     fastType();
