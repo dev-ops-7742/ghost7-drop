@@ -1,32 +1,48 @@
-<div class="file">
-  <div class="title">OFFICE TIME ZONE</div>
-  <div class="sub">PERSONAL FIELD LOG</div>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>FIELD LOG // CONNECTOR 6621 // 2020-06-17</title>
+<style>
+body{margin:0;background:#000;color:#0f0;font-family:'Courier New',monospace;font-size:15px;overflow:hidden;height:100vh;display:flex;justify-content:center;align-items:center}
+.scanlines{position:fixed;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,.35) 50%);background-size:100% 4px;pointer-events:none;z-index:10}
+#content{width:90%;max-width:900px;height:82vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;text-shadow:0 0 6px #0f0;scrollbar-width:none;padding-top:20px;line-height:1.6}
+#content::-webkit-scrollbar{display:none}
+.white-header{color:#fff;text-shadow:0 0 8px white;font-size:22px;font-weight:bold;margin-bottom:10px;text-align:center}
+.meta{color:#49f;font-size:13px;text-align:center;margin-bottom:25px;letter-spacing:2px}
+.quote{border-left:2px solid #f33;padding-left:15px;color:#f33;margin:15px 0;font-style:italic}
+.sig{margin-top:30px;color:#fff;text-align:right;font-weight:bold}
+p{margin:12px 0}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<div id="content">
 
-  <p>17/06/2020<br>02:14</p>
+<div class="white-header">OFFICE TIME ZONE // PERSONAL FIELD LOG</div>
+<div class="meta">CONNECTOR 6621 | 17/06/2020 | 02:14 | STATUS: [INITIAL DEPLOYMENT]</div>
 
-  <p>First full week here.</p>
+<p>First full week here.</p>
 
-  <p>
-    Still getting used to the local systems. Whoever designed these computers
-    clearly never had to work against a relay window.
-  </p>
+<p>Still getting used to the local systems. Whoever designed these computers clearly never had to work against a relay window.</p>
 
-  <p>
-    3312 got half a message through before the line dropped again.
-  </p>
+<p>3312 got half a message through before the line dropped again.</p>
 
-  <p class="quote">
-    Still waiting on fracture test confirmation...<br>
-    Do not allow 8891 to move until—
-  </p>
-
-  <p>That's all I got.</p>
-
-  <p>Saved a local copy anyway.</p>
-
-  <p>Nobody here has any idea what's coming in 2089.</p>
-
-  <p>Probably for the best.</p>
-
-  <p class="sig">—6621</p>
+<div class="quote">
+Still waiting on fracture test confirmation...<br>
+Do not allow 8891 to move until—
 </div>
+
+<p>That's all I got.</p>
+
+<p>Saved a local copy anyway.</p>
+
+<p>Nobody here has any idea what's coming in 2089.</p>
+
+<p>Probably for the best.</p>
+
+<div class="sig">—6621</div>
+
+</div>
+</body>
+</html>
