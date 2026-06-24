@@ -15,6 +15,9 @@ body{margin:0;background:#000;color:#0f0;font-family:Courier New,monospace;font-
 @keyframes blink{50%{opacity:0}}
 a.log-link{color:#0f0;text-decoration:none;cursor:pointer}
 a.log-link:hover{text-decoration:underline;text-shadow:0 0 8px #0f0}
+.modal{display:none;position:fixed;inset:0;background:#000;z-index:20;flex-direction:column;justify-content:center;align-items:center}
+.modal-content{width:80%;max-width:800px;height:70vh;overflow-y:auto;border:1px solid #0f0;padding:20px;text-shadow:0 0 6px #0f0}
+.close-btn{color:#f33;cursor:pointer;float:right;font-size:20px}
 </style>
 </head>
 
@@ -22,15 +25,53 @@ a.log-link:hover{text-decoration:underline;text-shadow:0 0 8px #0f0}
 <div class="scanlines"></div>
 <div id="content"></div>
 
+<div id="modal" class="modal">
+<div class="modal-content">
+<span class="close-btn" onclick="closeModal()">[X] CLOSE LOG</span>
+<div id="modal-body"></div>
+</div>
+</div>
+
 <script>
 const content = document.getElementById("content");
+const modal = document.getElementById("modal");
+const modalBody = document.getElementById("modal-body");
 
 // Debug reset key combo for testing
 document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
-        location.reload();
-    }
+    if (e.ctrlKey && e.shiftKey && e.key === 'R') location.reload();
 });
+
+// ADD NEW LOGS HERE - JUST ADD TO THIS ARRAY
+const fieldLogs = [
+    {
+        id: "log_001",
+        date: "2020-06-17_02:14",
+        connector: "6621",
+        zone: "Office Time Zone",
+        type: "Initial Deployment",
+        status: "ACTIVE",
+        content: `First full week here.
+
+Still getting used to the local systems. Whoever designed these computers clearly never had to work against a relay window.
+
+3312 got half a message through before the line dropped again.
+
+"Still waiting on fracture test confirmation...
+Do not allow 8891 to move until—"
+
+That's all I got.
+
+Saved a local copy anyway.
+
+Nobody here has any idea what's coming in 2089.
+
+Probably for the best.
+
+—6621`
+    }
+    // TO ADD A NEW LOG, COPY THE BLOCK ABOVE AND PASTE BELOW THIS LINE
+];
 
 const registryText = `ALL CONNECTORS MUST READ
 
@@ -131,7 +172,7 @@ ARCHIVE ACCESS LEVELS
 FIELD LOG ARCHIVE
 ================================
 
-[ACTIVE] 2020-06-17_02:14 | Connector 6621 | Office Time Zone | Initial Deployment
+${fieldLogs.map(log => `[${log.status}] ${log.date} | Connector ${log.connector} | ${log.zone} | ${log.type}`).join('\n')}
 [LOCKED] 2020-06-18_14:30 | Connector 6621 | Market District | Surveillance Log
 [PURGED] 2020-06-19_09:00 | Connector 6621 | [REDACTED] | [REDACTED]
 
@@ -146,15 +187,32 @@ What walks through them may not be what you sent.
 VERIFY EVERYTHING. TRUST NOTHING.
 THE ARCHIVE IS WATCHING.`;
 
-// Split text at the exact log entry point to inject real HTML
-const logEntry = '[ACTIVE] 2020-06-17_02:14 | Connector 6621 | Office Time Zone | Initial Deployment';
-const parts = registryText.split(logEntry);
-
-// Render with actual clickable anchor tag
+// Render content
 content.innerHTML = `<div class="white-header">ALL CONNECTORS MUST READ</div>` + 
-                    parts[0].replace(/ALL CONNECTORS MUST READ\n\n/g, '') +
-                    '<a class="log-link" href="log_6621_001.html">' + logEntry + '</a>' +
-                    parts[1];
-</script>
-</body>
-</html>
+                    registryText.replace(/ALL CONNECTORS MUST READ\n\n/g, '');
+
+// Make log entries clickable
+setTimeout(() => {
+    fieldLogs.forEach(log => {
+        const linkText = `[${log.status}] ${log.date} | Connector ${log.connector} | ${log.zone} | ${log.type}`;
+        const el = document.getElementById('content');
+        if (el) {
+            el.innerHTML = el.innerHTML.replace(
+                linkText,
+                `<a class="log-link" onclick="openLog('${log.id}')">${linkText}</a>`
+            );
+        }
+    });
+}, 100);
+
+function openLog(id) {
+    const log = fieldLogs.find(l => l.id === id);
+    if (log) {
+        modalBody.innerHTML = `<div style="color:#fff;font-size:20px;margin-bottom:15px">LOG: ${log.date} | CONNECTOR ${log.connector}</div><pre style="white-space:pre-wrap">${log.content}</pre>`;
+        modal.style.display = "flex";
+    }
+}
+
+function closeModal() {
+    modal.style.display = "none";
+}
