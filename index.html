@@ -2,271 +2,197 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>THE AETHELGARD ARCHIVE // SECURE DROP</title>
+<title>THE AETHELGARD REGISTRY // CONNECTOR ACCESS</title>
 <style>
 body{margin:0;background:#000;color:#0f0;font-family:Courier New,monospace;font-size:15px;overflow:hidden;height:100vh;display:flex;justify-content:center;align-items:center}
 .scanlines{position:fixed;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,.35) 50%);background-size:100% 4px;pointer-events:none;z-index:10}
-#screen,#floor1{width:90%;max-width:900px;height:82vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;text-shadow:0 0 6px #0f0;scrollbar-width:none}
-#screen::-webkit-scrollbar,#floor1::-webkit-scrollbar{display:none}
-.cursor{display:inline-block;width:10px;height:18px;background:#0f0;animation:blink .8s infinite}
-@keyframes blink{50%{opacity:0}}
-#lockout{display:none;position:fixed;inset:0;background:#000;z-index:20;flex-direction:column;justify-content:center;align-items:center;text-align:center}
-#lockout h1{color:#f33;text-shadow:0 0 12px red;font-size:30px}
-#countdown{color:#f33;font-size:48px;letter-spacing:5px;text-shadow:0 0 14px red;margin:25px}
-.box{width:34px;height:44px;margin:4px;background:#111;border:1px solid #f33;color:#f33;font-size:22px;text-align:center;font-family:Courier New}
-.box:focus{outline:none;border-color:white;color:white}
-button{margin-top:20px;background:#f33;color:#000;border:0;padding:10px 35px;font-weight:bold;font-family:Courier New;cursor:pointer}
-#error{display:none;color:#f33;margin-top:15px}
-.file{display:flex;justify-content:space-between;border-bottom:1px solid #123;padding:10px 0;cursor:pointer}
-.name{color:#49f}
-.status{color:#f33}
-.good{color:#0f0}
-.term-err{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#000;border:1px solid #f33;color:#f33;padding:10px 20px;font-family:Courier New;z-index:100;white-space:nowrap}
-#glitch-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:60;overflow:hidden;padding:20px;font-family:Courier New;color:#0f0;font-size:12px;white-space:pre-wrap;word-break:break-all;display:none}
-
-/* FIXED SECRET TRIGGER STYLES */
-#secret-trigger {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    width: 40px;
-    height: 40px;
-    z-index: 9999; /* Increased from 999 to guarantee it's on top */
-    cursor: default;
-    background: transparent;
-    pointer-events: auto; /* Explicitly enable click capture */
-}
+#content{width:90%;max-width:900px;height:82vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;text-shadow:0 0 6px #0f0;scrollbar-width:none;padding-top:20px}
+#content::-webkit-scrollbar{display:none}
+.white-header{color:#fff;text-shadow:0 0 8px white;font-size:24px;font-weight:bold;margin-bottom:20px;text-align:center;line-height:1.4}
+a.log-link{color:#0f0;text-decoration:none;cursor:pointer}
+a.log-link:hover{text-decoration:underline;text-shadow:0 0 8px #0f0}
+.modal{display:none;position:fixed;inset:0;background:#000;z-index:20;flex-direction:column;justify-content:center;align-items:center}
+.modal-content{width:80%;max-width:800px;height:70vh;overflow-y:auto;border:1px solid #0f0;padding:20px;text-shadow:0 0 6px #0f0}
+.close-btn{color:#f33;cursor:pointer;float:right;font-size:20px}
 </style>
 </head>
-
 <body>
 <div class="scanlines"></div>
-<div id="screen"></div>
-
-<div id="lockout">
-<h1> TEMPORAL LOCKOUT ACTIVE ⚠</h1>
-<p>UNAUTHORIZED OBSERVATION DETECTED. DATA STREAM TERMINATED.</p>
-<p>ENTER 11-DIGIT GEOSPATIAL KEY TO ACCESS FLOOR 1.</p>
-<div id="countdown">--:--:--</div>
-<div id="grid">
-<input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1"><input class="box" maxlength="1">
+<div id="content"></div>
+<div id="modal" class="modal">
+<div class="modal-content">
+<span class="close-btn" onclick="closeModal()">[X] CLOSE LOG</span>
+<div id="modal-body"></div>
 </div>
-<p style="color:#555;font-size:12px">// REFERENCE: EUROPEAN NUCLEAR RESEARCH FACILITY //</p>
-<button onclick="checkCode()">AUTHENTICATE</button>
-<p id="error">SEQUENCE INVALID. TEMPORAL FRACTURE DETECTED.</p>
 </div>
-
-<div id="floor1" style="display:none"></div>
-<div id="glitch-overlay"></div>
-
-<!-- INVISIBLE SECRET TRIGGER -->
-<div id="secret-trigger"></div>
-
 <script>
-const ACCESS_HASH = "8d03385d8d19e08cc3e3681d5611b6dc7bf0a42de4a063a68a5a582beac46ebb";
-const LOCK_KEY = "aethelgard_lock_v1";
-const LOCK_TIME = 24*60*60*1000;
+const content = document.getElementById("content");
+const modal = document.getElementById("modal");
+const modalBody = document.getElementById("modal-body");
 
-// FULL TRANSMISSION 001 BASE64 STRING
-const _t_enc = "VEhFIMOGVEhFTEdBUkQgUFJPVE9DT0wgLSBUUkFOU01JU1NJT04gMDAxIE15IG5hbWUgaXMgbm90IGltcG9ydGFudC4gVGhlIGRhdGUgaXMuIEkgYW0gc3BlYWtpbmcgdG8geW91IGZyb20gdGhlIHllYXIgMzAyNi4gSWYgdGhpcyBtZXNzYWdlIGhhcyByZWFjaGVkIHlvdSwgdGhlbiB0aGUgdHJhbnNtaXNzaW9uIGNvcnJpZG9yIGlzIHN0aWxsIG9wZW4sIHdoaWNoIG1lYW5zIHdlIHN0aWxsIGhhdmUgYSBjaGFuY2UuIEZvciBtb3N0IG9mIGh1bWFuIGhpc3RvcnksIHBlb3BsZSBiZWxpZXZlZCB0aW1lIHdhcyBhIHJpdmVyIGZsb3dpbmcgaW4gb25lIGRpcmVjdGlvbuKAkHBhc3QsIHByZXNlbnQsIGZ1dHVyZS4gVGhhdCB3YXMgd3JvbmcuIFRpbWUgaXMgYSBzdHJ1Y3R1cmUsIGEgZnJhbWV3b3JrLCBhIGZhYnJpYywgYW5kIGluIG15IGNlbnR1cnkgd2UgYnJva2UgaXQuIFRoZSBldmVudCBiZWdhbiB3aXRoIHdoYXQgaGlzdG9yeSByZWNvcmRzIGFzIGEgc2NpZW50aWZpYyBicmVha3Rocm91Z2gsIGJ1dCB3aGF0IHdlIG5vdyBrbm93IHdhcyB0aGUgZmlyc3QgZnJhY3R1cmUuIFRoZSB1bm9mZmljaWFsIHJlY29yZHMgcG9pbnQgdG8gZXhwZXJpbWVudHMgY29ubmVjdGVkIHRvIENFUk4sIHdoZXJlIGh1bWFuaXR5IHB1c2hlZCBmdXJ0aGVyIGludG8gdGhlIG5hdHVyZSBvZiByZWFsaXR5IHRoYW4gaXQgdW5kZXJzdG9vZC4gQXQgZmlyc3QgdGhlIGRhbWFnZSB3YXMgbWljcm9zY29waWM6IG1pc3Npbmcgc2Vjb25kcywgZm9yZ290dGVuIGNvbnZlcnNhdGlvbnMsIHJlY29yZHMgYXBwZWFyaW5nIHdoZXJlIHRoZXkgc2hvdWxkIG5vdCBleGlzdCwgcGVvcGxlIHJlbWVtYmVyaW5nIGV2ZW50cyBkaWZmZXJlbnRseS4gTm9ib2R5IGxpc3RlbmVkLiBIdW1hbml0eSBuZXZlciBkb2VzLiBCeSB0aGUgdHdlbnR5LXNlY29uZCBjZW50dXJ5IHRoZSBmcmFjdHVyZXMgaGFkIGdyb3duLiBCeSB0aGUgdHdlbnR5LWZvdXJ0aCBjZW50dXJ5IGVudGlyZSBoaXN0b3JpY2FsIGV2ZW50cyBleGlzdGVkIGluIG11bHRpcGxlIHZlcnNpb25zLiBQZW9wbGUgcmVtZW1iZXJlZCBkaWZmZXJlbnQgZWxlY3Rpb25zLCBkaWZmZXJlbnQgd2FycywgZGlmZmVyZW50IG91dGNvbWVzLiBSZWFsaXR5IGl0c2VsZiBiZWNhbWUgdW5zdGFibGUuIEJ5IHRoZSB0d2VudHktZWlnaHRoIGNlbnR1cnkgdGhlIGRhbWFnZSB3YXMgaXJyZXZlcnNpYmxlLiBUaGUgZnV0dXJlIGJlY2FtZSBpbmZlY3RlZCBieSBjb21wZXRpbmcgdGltZWxpbmVzLiBDaXRpZXMgYXBwZWFyZWQgYW5kIHZhbmlzaGVkLiBTY2llbnRpZmljIGxhd3MgZHJpZnRlZC4gQ2l2aWxpc2F0aW9ucyByb3NlIGFuZCBkaXNhcHBlYXJlZCBiZXR3ZWVuIG9uZSBnZW5lcmF0aW9uIGFuZCB0aGUgbmV4dC4gRW50aXJlIGNlbnR1cmllcyB3ZXJlIHJld3JpdHRlbiBvdmVybmlnaHQuIFRvZGF5LCBpbiB0aGUgeWVhciAzMDI2LCBodW1hbml0eSBzdXJ2aXZlcywgYnV0IGJhcmVseS4gVGhlIFRlbXBvcmFsIENvbGxhcHNlIGlzIGFjY2VsZXJhdGluZyBhbmQgb3VyIGdyZWF0ZXN0IG1pbmRzIGhhdmUgcmVhY2hlZCBhIHRlcnJpZnlpbmcgY29uY2x1c2lvbjogdGhlIGRhbWFnZSBjYW5ub3QgYmUgcmVwYWlyZWQgZnJvbSBvdXIgdGltZS4gSXQgbXVzdCBiZSByZXBhaXJlZCBmcm9tIHlvdXJzLiBTb21ld2hlcmUgaW4geW91ciBjZW50dXJ5IGxpZXMgdGhlIGZyYWN0dXJlIHBvaW50IHRoYXQgZXZlbnR1YWxseSBkZXN0cm95cyBvdXJzLiBUaGF0IGlzIHdoeSB0aGlzIHRyYW5zbWlzc2lvbiBleGlzdHMuIFdlIGFyZSBub3QgbG9va2luZyBmb3Igc29sZGllcnMsIHBvbGl0aWNpYW5zLCBjZWxlYnJpdGllcywgb3IgZm9sbG93ZXJzLiBXZSBhcmUgbG9va2luZyBmb3IgdGhpbmtlcnMsIGJ1aWxkZXJzLCByZXNlYXJjaGVycywgcHJvYmxlbS1zb2x2ZXJzLCBkcmVhbWVycywgYW5kIHRob3NlIHJhcmUgaW5kaXZpZHVhbHMgd2hvIHN0YXJlIGF0IGltcG9zc2libGUgcXVlc3Rpb25zIGFuZCByZWZ1c2UgdG8gbG9vayBhd2F5LiBXZSBzZWFrIHRlbiBpbnRlbGxlY3R1YWxzLiBUZW4gZ2VuaXVzLiBUZW4gbWluZHMgY2FwYWJsZSBvZiBzZWVpbmcgYmV5b25kIHRoZSBsaW1pdHMgb2YgY29udmVudGlvbmFsIHRob3VnaHQuIE1hdGhlbWF0aWNpYW5zLCBwaHlzaWNpc3RzLCBjcnlwdG9ncmFwaGVycywgZW5naW5lZXJzLCBoaXN0b3JpYW5zLCBsaW5ndWlzdHMsIGFydGlmaWNpYWwgaW50ZWxsaWdlbmNlIHJlc2VhcmNoZXJzLCBwdXp6bGUgc29sdmVycywgcGF0dGVybiByZWNvZ25pc2VycywgYW5kIGFueW9uZSB3aG8gbm90aWNlcyB3aGF0IG90aGVycyBpZ25vcmUuIElmIHlvdSBhcmUgcmVhZGluZyB0aGlzLCBhc2sgeW91cnNlbGYgd2h5IHRoaXMgbWVzc2FnZSBmb3VuZCB5b3UsIHdoeSB5b3UgYXJlIHN0aWxsIHJlYWRpbmcsIGFuZCB3aHkgYSBwYXJ0IG9mIHlvdSBiZWxpZXZlcyBpdCBjb3VsZCBiZSB0cnVlLiBUaGUg04Z0aGVsZ2FyZCBQcm90b2NvbCBoYXMgYmVndW4uIFRoZSBmdXR1cmUgaXMgY2FsbGluZyBmb3Igdm9sdW50ZWVycywgbm90IHRvIHNhdmUgdGhlIHdvcmxkLCBidXQgdG8gc2F2ZSB0aW1lIGl0c2VsZi4gVGVuIG5hbWVzIHdpbGwgYmUgcmVxdWlyZWQuIFRlbiBtaW5kcyB3aWxsIGJlIGNob3Nlbi4gVGVuIGRvb3JzIHdpbGwgZXZlbnR1YWxseSBvcGVuLiBBbmQgd2hlbiB0aGV5IGRvLCBodW1hbml0eSdzIGZ1dHVyZSBtYXkgZGVwZW5kIG9uIHdobyB3YWxrcyB0aHJvdWdoIHRoZW0uIFRoZSBmaXJzdCBxdWVzdGlvbiBpcyBzaW1wbGU6IGlmIHRpbWUgd2VyZSBicm9rZW4sIGhvdyB3b3VsZCB5b3UgcHJvdmUgaXQ/IFRoZSBzZWFyY2ggYmVnaW5zIG5vdy4gRW5kIFRyYW5zbWlzc2lvbiAwMDEu";
+// ADD NEW LOGS HERE - JUST COPY/PASTE THIS BLOCK AND CHANGE THE TEXT
+const fieldLogs = [
+    {
+        id: "log_001",
+        date: "2020-06-17_02:14",
+        connector: "6621",
+        zone: "Office Time Zone",
+        type: "Initial Deployment",
+        status: "ACTIVE",
+        content: `First full week here.
 
-const plainHeader = `THE THELGARD PROTOCOL\n\nARCHIVE STATUS: PARTIAL\n\nRECOVERY STATUS: 17%\n\n--------------------------------\nBEGIN RECOVERED TRANSMISSION\nENCODING: BASE64\n--------------------------------\n\n`;
+Still getting used to the local systems. Whoever designed these computers clearly never had to work against a relay window.
 
-const base64Payload = `SWYgeW91IGFyZSByZWFkaW5nIHRoaXMsIHRoZW4gdGhlIGFyY2hpdmUgaXMgc3RpbGwgZnVuY3Rpb25pbmcuCgpUaGF0IHNob3VsZCBub3QgYmUgcG9zc2libGUuCgpUaGUgcmVjb3JkcyB5b3UgYXJlIGFib3V0IHRvIGFjY2VzcyB3ZXJlIG5vdCByZWNvdmVyZWQgZnJvbSBhIHNlcnZlciwgYSBkYXRhYmFzZSwgb3IgYSBnb3Zlcm5tZW50IHN5c3RlbS4gVGhleSB3ZXJlIHJlY292ZXJlZCBmcm9tIGEgdHJhbnNtaXNzaW9uIGNoYWluIHdob3NlIG9yaWdpbiBwb2ludCBoYXMgbm90IHlldCBvY2N1cnJlZC4KClRoZSBvbGRlc3QgZmlsZXMgaW4gdGhpcyBhcmNoaXZlIGFwcGVhciB0byBvcmlnaW5hdGUgZnJvbSB0aGUgeWVhciAzMDM2LgoKVGhlIG5ld2VzdCBmaWxlcyBhcHBlYXIgdG8gb3JpZ2luYXRlIGZyb20gdG9tb3Jyb3cuCgpUaGlzIGNvbnRyYWRpY3Rpb24gcmVtYWlucyB1bnJlc29sdmVkLgoKRm9yIHRoZSBsYXN0IGVsZXZlbiB5ZWFycyBmcmFnbWVudHMgaGF2ZSBhcHBlYXJlZCBhY3Jvc3MgdW5yZWxhdGVkIHN5c3RlbXMuIFNvbWUgYXJyaXZlZCB0aHJvdWdoIGNvcnJ1cHRlZCBiYWNrdXBzLiBTb21lIGFwcGVhcmVkIGluc2lkZSBkZWxldGVkIHN0b3JhZ2Ugdm9sdW1lcy4gU29tZSB3ZXJlIGRpc2NvdmVyZWQgZW1iZWRkZWQgd2l0aGluIGZpbGVzIHRoYXQgcHJlZGF0ZSB0aGVpciBvd24gY3JlYXRpb24gZGF0ZXMuCgpFdmVyeSBhdHRlbXB0IHRvIGV4cGxhaW4gdGhlc2UgZXZlbnRzIGhhcyBmYWlsZWQuCgpUaGUgYXJjaGl2ZSBjb250YWlucyByZWZlcmVuY2VzIHRvIFByb2plY3QgTlVMTCwgdGhlIFRoaXJ0ZWVudGggQXJjaGl2ZSwgdGhlIFJlZ2lzdHJ5LCBORVJPIExJTkssIHRoZSBJcm9uIERvb3IsIGFuZCBhbiBpbmRpdmlkdWFsIGlkZW50aWZ5aW5nIHRoZW1zZWx2ZXMgYXMgRWxpYXMgVm9zcy4KCk5vIHZlcmlmaWVkIHJlY29yZCBvZiBFbGlhcyBWb3NzIGV4aXN0cy4KCkRlc3BpdGUgdGhpcywgVm9zcyBhcHBlYXJzIHJlcGVhdGVkbHkgdGhyb3VnaG91dCB0aGUgcmVjb3ZlcmVkIG1hdGVyaWFsLgoKVGhlIHRyYW5zbWlzc2lvbnMgZGVzY3JpYmUgYSBmdXR1cmUgdGltZWxpbmUgZXhwZXJpZW5jaW5nIHByb2dyZXNzaXZlIGluc3RhYmlsaXR5LCB3aWRlc3ByZWFkIGRhdGEgbG9zcywgYW5kIHdoYXQgdGhlIHJlY29yZHMgcmVmZXIgdG8gYXMgVGVtcG9yYWwgRnJhY3R1cmUgRXZlbnRzLgoKVGhlIHZhbGlkaXR5IG9mIHRoZXNlIGNsYWltcyByZW1haW5zIHVua25vd24uCgpTZXZlcmFsIGluZGl2aWR1YWxzIG1lbnRpb25lZCB3aXRoaW4gdGhlIGFyY2hpdmUgaGF2ZSBzaW5jZSBiZWVuIGlkZW50aWZpZWQuCgpTZXZlcmFsIG90aGVycyBzaG91bGQgbm90IGV4aXN0LgoKQSBzbWFsbCBudW1iZXIgYXBwZWFyIHRvIHBvc3Nlc3MgaW5mb3JtYXRpb24gdGhleSBjb3VsZCBub3QgcmVhc29uYWJseSBoYXZlIG9idGFpbmVkLgoKRm9yIHRoaXMgcmVhc29uIHRoZSBhcmNoaXZlIHJlbWFpbnMgdW5kZXIgb2JzZXJ2YXRpb24uCgpJZiB5b3UgY29udGludWUgYmV5b25kIHRoaXMgcG9pbnQsIHlvdSB3aWxsIGVuY291bnRlciBlbmNvZGVkIG1hdGVyaWFsIHJlcXVpcmluZyBpbmRlcGVuZGVudCBhbmFseXNpcy4gU29tZSBmaWxlcyBtYXkgYmUgaW5jb21wbGV0ZS4gU29tZSBtYXkgYmUgY29ycnVwdGVkLiBTb21lIG1heSBoYXZlIGJlZW4gYWx0ZXJlZCBpbnRlbnRpb25hbGx5LgoKQXNzdW1lIG5vdGhpbmcuCgpUcnVzdCBub3RoaW5nLgoKVmVyaWZ5IGV2ZXJ5dGhpbmcuCgpPbmUgZmluYWwgd2FybmluZy4KClRoZSBhcmNoaXZlIHJlcGVhdGVkbHkgcmVmZXJzIHRvIGluZGl2aWR1YWxzIGtub3duIGFzIENvbm5lY3RvcnMuCgpUaGVzZSBpbmRpdmlkdWFscyBzaGFyZSBvbmUgY29tbW9uIGNoYXJhY3RlcmlzdGljLgoKVGhleSBjb250aW51ZS4KCldoZW4gb3RoZXJzIGxlYXZlLCB0aGV5IGNvbnRpbnVlLgoKV2hlbiBvdGhlcnMgZGlzbWlzcyB0aGUgZXZpZGVuY2UsIHRoZXkgY29udGludWUuCgpXaGVuIG90aGVycyBzdG9wIGFza2luZyBxdWVzdGlvbnMsIHRoZXkgY29udGludWUuCgpJZiB0aGUgcmVjb3ZlcmVkIGZpbGVzIGFyZSBhY2N1cmF0ZSwgdGhlIGFyY2hpdmUgZG9lcyBub3Qgc2VhcmNoIGZvciBldmVyeW9uZS4KClRoZSBhcmNoaXZlIHNlYXJjaGVzIGZvciB0aGVtLgoKQVJDSElWRSBBQ0NFU1MgR1JBTlRFRC4KClRSQU5TTUlTU0lPTl8wMDEgQVZBSUxBQkxFLgoKUHJvY2VlZCBhdCB5b3VyIG93biByaXNrLg==`;
+3312 got half a message through before the line dropped again.
 
-const screen = document.getElementById("screen");
-const lockout = document.getElementById("lockout");
-const floor1 = document.getElementById("floor1");
-const boxes = document.querySelectorAll(".box");
-let _lastClickTime = null;
-let _glitchActive = false;
+"Still waiting on fracture test confirmation...
+Do not allow 8891 to move until—"
 
-function typeText(el, text, done){
-  el.innerHTML = "";
-  const cursor = document.createElement("span");
-  cursor.className = "cursor";
-  el.appendChild(cursor);
-  let i = 0;
-  function tick(){
-    if(i < text.length){
-      el.insertBefore(document.createTextNode(text[i]), cursor);
-      i++;
-      el.scrollTop = el.scrollHeight;
-      setTimeout(tick, Math.random()*8+2);
-    } else {
-      cursor.remove();
-      if(done) done();
+That's all I got.
+
+Saved a local copy anyway.
+
+Nobody here has any idea what's coming in 2089.
+
+Probably for the best.
+
+—6621`
     }
-  }
-  tick();
-}
+];
 
-function start(){
-  const lockedUntil = localStorage.getItem(LOCK_KEY);
-  if(lockedUntil && Date.now() < Number(lockedUntil)){
-    showLock(Number(lockedUntil));
-    return;
-  }
-  localStorage.removeItem(LOCK_KEY);
+// BUILD LOG LIST AUTOMATICALLY FROM ARRAY ABOVE
+const logListHTML = fieldLogs.map(log => 
+    `<a class="log-link" onclick="openLog('${log.id}')">[${log.status}] ${log.date} | Connector ${log.connector} | ${log.zone} | ${log.type}</a>`
+).join('\n');
 
-  const fullText = plainHeader + base64Payload + `\n\n--------------------------------\nEND RECOVERED TRANSMISSION\n--------------------------------`;
+const registryText = `ALL CONNECTORS MUST READ
 
-  typeText(screen, fullText, () => {
-    setTimeout(() => {
-      const until = Date.now() + LOCK_TIME;
-      localStorage.setItem(LOCK_KEY, until);
-      showLock(until);
-    }, 3000);
-  });
+================================
+OPERATIONAL DIRECTIVE 7-ALPHA
+================================
 
-  // ATTACH SECRET TRIGGER INSIDE START() TO ENSURE DOM IS READY
-  document.getElementById('secret-trigger').addEventListener('click', function() {
-      window.location.href = 'registry.html'; 
-  });
-}
+TEMPORAL DEPLOYMENT PROTOCOLS
 
-function showLock(until){
-  screen.style.display = "none";
-  floor1.style.display = "none";
-  lockout.style.display = "flex";
-  updateCountdown(until);
-  setInterval(() => updateCountdown(until), 1000);
-}
+• AUTHORIZED PERSONNEL ONLY: Connectors may initiate temporal displacement 
+  to silence high-value targets or extract rogue staff. All deployments 
+  require dual-key verification and temporal anchor confirmation.
 
-function updateCountdown(until){
-  let r = until - Date.now();
-  if(r < 0){ localStorage.removeItem(LOCK_KEY); location.reload(); return; }
-  let h = String(Math.floor(r/3600000)).padStart(2,"0");
-  let m = String(Math.floor((r%3600000)/60000)).padStart(2,"0");
-  let s = String(Math.floor((r%60000)/1000)).padStart(2,"0");
-  document.getElementById("countdown").innerText = `${h}:${m}:${s}`;
-}
+• TARGET PRIORITY MATRIX: Only subjects classified as ROGUE (Class-Ω) or 
+  HIGH-INTEREST (Class-Δ) may be engaged. Civilian interference results in 
+  immediate connector termination and timeline purge.
 
-boxes.forEach((b,i)=>{
-  b.addEventListener("input",()=>{
-    b.value=b.value.replace(/[^0-9]/g,"");
-    if(b.value && i<boxes.length-1) boxes[i+1].focus();
-  });
-});
+• TEMPORAL WINDOW RESTRICTIONS: Connector 6621 is the designated field 
+  operative for periods 2017–present. Pre-2017 operations are forbidden 
+  due to unresolved causal loops in that era. Requests outside this window 
+  will be flagged as paradox risks.
 
-async function checkCode(){
-  let entered = "";
-  boxes.forEach(b => entered += b.value);
+• SILENCING PROTOCOL: Targets must be neutralized using non-temporal methods 
+  whenever possible. Temporal erasure is a last resort and requires Council 
+  approval. Unauthorized erasures will be investigated as rogue activity.
 
-  const data = new TextEncoder().encode(entered);
-  const buffer = await crypto.subtle.digest("SHA-256", data);
-  const hash = Array.from(new Uint8Array(buffer))
-    .map(b => b.toString(16).padStart(2,"0"))
-    .join("");
+================================
+CONNECTOR 6621 FIELD OPERATIVE
+================================
 
-  if(hash === ACCESS_HASH){
-    localStorage.removeItem(LOCK_KEY);
-    lockout.style.display = "none";
-    openFloor1();
-  } else {
-    document.getElementById("error").style.display = "block";
-    boxes.forEach(b=>b.value="");
-    boxes[0].focus();
-    setTimeout(()=>document.getElementById("error").style.display="none",2000);
-  }
-}
+DESIGNATION:      Field Operative / Temporal Enforcement
+ACTIVE WINDOW:    2017 – Present (or until relocation to past/future fracture)
+CURRENT STATUS:   [AWAITING DEPLOYMENT ORDERS]
+CONTACT METHOD:   Encrypted burst transmission only
+SECURE LINE:      +44 7593 881 143
 
-function showTerminalError(msg) {
-  const errDiv = document.createElement('div');
-  errDiv.className = 'term-err';
-  errDiv.textContent = `[ERROR] ${msg}`;
-  document.body.appendChild(errDiv);
-  setTimeout(() => errDiv.remove(), 3000);
-}
+NOTE: Connector 6621 can ONLY be contacted for time periods 2017 onwards.
+Pre-2017 requests will be ignored due to temporal interference risk.
+Do not attempt contact outside designated windows.
 
-// FIXED: REMOVED TIME LIMIT SO FULL MESSAGE TYPES OUT
-function triggerGlitchReveal() {
-  if (_glitchActive) return;
-  _glitchActive = true;
+================================
+PRIORITY TARGET: ELIAS VOSS
+================================
 
-  const overlay = document.getElementById('glitch-overlay');
-  overlay.style.display = 'block';
-  overlay.textContent = '';
+CLASSIFICATION:   Class-Ω ROGUE / TEMPORAL ANOMALY
+STATUS:           ACTIVE / UNCONTAINED
+LAST KNOWN LOC:   [REDACTED]
 
-  try {
-    const decoded = atob(_t_enc);
-    const chars = decoded.split('');
-    let i = 0;
+DIRECTIVE: Elias Voss is the #1 priority target for all active connectors. 
+He possesses unauthorized knowledge of the Æthelgard Protocol and has been 
+observed manipulating temporal fractures. Do NOT engage directly. Report 
+all sightings immediately via secure line 07593881143.
 
-    function fastType() {
-      if (i < chars.length) {
-        overlay.textContent += chars[i];
-        i++;
-        overlay.scrollTop = overlay.scrollHeight;
-        requestAnimationFrame(fastType);
-      } else {
-        _glitchActive = false;
-        _lastClickTime = Date.now();
-      }
+WARNING: Voss exhibits signs of advanced temporal drift. He may appear 
+younger/older than recorded. Trust no visual identification without 
+hash verification.
+
+================================
+ROGUE STAFF IDENTIFICATION
+================================
+
+• PHOTOGRAPHIC EVIDENCE: Only images of confirmed rogue connectors or 
+  Class-Δ targets may be uploaded. Active connector photos are strictly 
+  prohibited. Violations result in immediate access revocation.
+
+• VERIFICATION HASH REQUIRED: All submissions must include SHA-256 hash 
+  of source file + temporal coordinates of capture. Unverified uploads 
+  are auto-purged within 60 seconds.
+
+• REPORT SUSPICIOUS ACTIVITY: If you observe a connector acting outside 
+  their assigned temporal window, exhibiting memory drift, or referencing 
+  events that haven't occurred yet, report immediately via encrypted 
+  channel Δ-9. Do not confront directly.
+
+================================
+TEMPORAL SAFETY WARNINGS
+================================
+
+⚠ WARNING: TEMPORAL DISPLACEMENT CARRIES RISK OF CAUSAL FRACTURE.
+⚠ WARNING: CONTACT WITH YOUR PAST/FUTURE SELF RESULTS IN NEURAL COLLAPSE.
+⚠ WARNING: UNAUTHORIZED TIMELINE ALTERATION IS PUNISHABLE BY ERASURE.
+⚠ WARNING: IF YOU BEGIN REMEMBERING EVENTS THAT NEVER HAPPENED, CEASE 
+           ALL OPERATIONS AND INITIATE CONTAINMENT PROTOCOL Σ.
+
+================================
+ARCHIVE ACCESS LEVELS
+================================
+
+[ACTIVE]        Cleared for all connectors
+[CERN TRACE]    Requires Level-3 clearance + temporal anchor verification
+[ALL EYES]      Council-only access. Unauthorized viewing triggers lockdown
+[RED CHANNEL]   Emergency broadcast. Ignore unless direct alert received
+[LOCKED]        Sealed by temporal court order. Do not attempt decryption
+[PURGED]        Data destroyed due to paradox contamination
+[UNRESOLVED]    Contains conflicting timelines. Reading may cause dissonance
+
+================================
+FIELD LOG ARCHIVE
+================================
+
+${logListHTML}
+[LOCKED] 2020-06-18_14:30 | Connector 6621 | Market District | Surveillance Log
+[PURGED] 2020-06-19_09:00 | Connector 6621 | [REDACTED] | [REDACTED]
+
+================================
+FINAL NOTICE
+================================
+
+You were chosen because you refuse to look away.
+But remember: some doors open both ways.
+What walks through them may not be what you sent.
+
+VERIFY EVERYTHING. TRUST NOTHING.
+THE ARCHIVE IS WATCHING.`;
+
+content.innerHTML = `<div class="white-header">ALL CONNECTORS MUST READ</div>` + 
+                    registryText.replace(/ALL CONNECTORS MUST READ\n\n/g, '');
+
+function openLog(id) {
+    const log = fieldLogs.find(l => l.id === id);
+    if (log) {
+        modalBody.innerHTML = `<div style="color:#fff;font-size:20px;margin-bottom:15px">LOG: ${log.date} | CONNECTOR ${log.connector}</div><pre style="white-space:pre-wrap">${log.content}</pre>`;
+        modal.style.display = "flex";
     }
-    fastType();
-  } catch(e) {
-    overlay.textContent = '[SYSTEM ERROR] DECRYPTION FAILED. TEMPORAL SIGNATURE CORRUPTED.';
-    setTimeout(() => {
-      overlay.style.display = 'none';
-      _glitchActive = false;
-      _lastClickTime = Date.now();
-    }, 2000);
-  }
 }
 
-// Check every second for 90s inactivity
-setInterval(() => {
-  if (_lastClickTime && !_glitchActive && (Date.now() - _lastClickTime > 90000)) {
-    triggerGlitchReveal();
-  }
-}, 1000);
-
-function openFloor1(){
-  floor1.style.display = "block";
-  floor1.innerHTML = `
-> AUTHENTICATION ACCEPTED.
-> CONNECTOR VERIFIED.
-> FLOOR 1 ACCESS GRANTED.
-> INDEX OF /SECURE_DROP/GHOST7/
-
-<div class="file" data-file="transmission_002.html"><span class="name">transmission_002.html</span><span class="status">[LOCKED] | 4.2 KB</span></div>
-<div class="file" data-file="surveillance_log_shanghai.dat"><span class="name">surveillance_log_shanghai.dat</span><span class="status">[ENCRYPTED] | 842 KB</span></div>
-<div class="file" data-file="candidate_0912.html"><span class="name">candidate_0912.html</span><span class="good">[ACTIVE] | 6.1 KB</span></div>
-<div class="file" data-file="candidate_2046.html"><span class="name">candidate_2046.html</span><span class="good">[CERN TRACE] | 7.4 KB</span></div>
-<div class="file" data-file="candidate_6621.html"><span class="name">candidate_6621.html</span><span class="status">[ALL EYES] | 5.9 KB</span></div>
-<div class="file" data-file="nero_link_001.html"><span class="name">nero_link_001.html</span><span class="status">[RED CHANNEL] | 9.2 KB</span></div>
-<div class="file" data-file="ghost7_manifest.json"><span class="name">ghost7_manifest.json</span><span class="status">[PURGED] | 0 KB</span></div>
-<div class="file" data-file="iron_door.ref"><span class="name">iron_door.ref</span><span class="status">[UNRESOLVED] | 13 B</span></div>
-
-> FLOOR 1 IS OPEN.
-> NEW FILES MAY APPEAR WITHOUT WARNING.
-`;
-
-  // Attach click handlers with timer reset and lore errors
-  document.querySelectorAll('.file').forEach(row => {
-    row.onclick = () => {
-      _lastClickTime = Date.now(); // Reset 90s timer on every click
-      
-      const fname = row.getAttribute('data-file');
-      const status = row.querySelector('.status, .good').textContent;
-      
-      if (status.includes('[LOCKED]') || status.includes('[PURGED]')) {
-        showTerminalError(`${fname} is corrupted or restricted.`);
-      } else if (status.includes('[ENCRYPTED]')) {
-        showTerminalError(`Decryption key required for ${fname}.`);
-      } else if (status.includes('[ALL EYES]') || status.includes('[RED CHANNEL]')) {
-        showTerminalError(`Clearance level insufficient for ${fname}.`);
-      } else if (status.includes('[UNRESOLVED]')) {
-        showTerminalError(`${fname} contains unresolved temporal anomalies.`);
-      } else {
-        showTerminalError(`${fname} loaded into buffer. Awaiting manual extraction.`);
-      }
-    };
-  });
+function closeModal() {
+    modal.style.display = "none";
 }
-
-start();
 </script>
 </body>
 </html>
